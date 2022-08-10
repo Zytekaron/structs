@@ -24,13 +24,13 @@ func NewOrdered[V constraints.Ordered]() *Stack[V] {
 
 func From[V any](eq structs.EqualFunc[V], values ...V) *Stack[V] {
 	return &Stack[V]{
-		data: list.From(eq, values...),
+		data: list.Of(eq, values...),
 	}
 }
 
 func FromOrdered[V constraints.Ordered](values ...V) *Stack[V] {
 	return &Stack[V]{
-		data: list.FromOrdered(values...),
+		data: list.OfOrdered(values...),
 	}
 }
 
@@ -116,6 +116,6 @@ func (s *Stack[V]) Size() int {
 	return s.data.Size()
 }
 
-func (s *Stack[V]) ToSlice() []V {
-	return s.data.ToSlice()
+func (s *Stack[V]) Values() []V {
+	return s.data.Values()
 }

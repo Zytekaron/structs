@@ -59,3 +59,7 @@ func (q *Queue[V]) Size() int {
 func (q *Queue[V]) Clear() {
 	q.data.Clear()
 }
+
+func (q *Queue[V]) Values() []V {
+	return q.data.Values()
+}

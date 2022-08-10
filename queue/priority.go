@@ -54,3 +54,7 @@ func (p *PriorityQueue[V]) Size() int {
 func (p *PriorityQueue[V]) Clear() {
 	p.heap.Clear()
 }
+
+func (p *PriorityQueue[V]) Values() []V {
+	return p.heap.Values()
+}
