@@ -6,6 +6,16 @@ type Iterator[V any] interface {
 	Remove()
 }
 
+type ListIterator[V any] interface {
+	HasNext() bool
+	HasPrevious() bool
+	NextIndex() int
+	Next() V
+	PreviousIndex() int
+	Previous() V
+	Remove()
+}
+
 type Collection[V any] interface {
 	Add(value V) bool
 	AddAll(other Collection[V]) bool
