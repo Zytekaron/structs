@@ -48,9 +48,9 @@ func TestList_AddIndex(t *testing.T) {
 
 func TestList_AddIndexNode(t *testing.T) {
 	l := OfOrdered(1, 3, 5)
-	a := &Node[int]{Value: 2}
-	b := &Node[int]{Value: 4}
-	c := &Node[int]{Value: 6}
+	a := newNode(2)
+	b := newNode(4)
+	c := newNode(6)
 	l.AddIndexNode(1, a) // 1, 2, 3, 5       // mid
 	l.AddIndexNode(3, b) // 1, 2, 3, 4, 5    // mid (shifted)
 	l.AddIndexNode(5, c) // 1, 2, 3, 4, 5, 6 // end (one after)
@@ -77,9 +77,9 @@ func TestList_AddFirst(t *testing.T) {
 
 func TestList_AddFirstNode(t *testing.T) {
 	l := NewOrdered[int]()
-	l.AddFirstNode(&Node[int]{Value: 3})
-	l.AddFirstNode(&Node[int]{Value: 2})
-	l.AddFirstNode(&Node[int]{Value: 1})
+	l.AddFirstNode(newNode(3))
+	l.AddFirstNode(newNode(2))
+	l.AddFirstNode(newNode(1))
 
 	expect := []int{1, 2, 3}
 	got := l.Values()
@@ -103,9 +103,9 @@ func TestList_AddLast(t *testing.T) {
 
 func TestList_AddLastNode(t *testing.T) {
 	l := NewOrdered[int]()
-	l.AddLastNode(&Node[int]{Value: 1})
-	l.AddLastNode(&Node[int]{Value: 2})
-	l.AddLastNode(&Node[int]{Value: 3})
+	l.AddLastNode(newNode(1))
+	l.AddLastNode(newNode(2))
+	l.AddLastNode(newNode(3))
 
 	expect := []int{1, 2, 3}
 	got := l.Values()
@@ -189,9 +189,9 @@ func TestList_ContainsAll(t *testing.T) {
 
 func TestList_FindNode(t *testing.T) {
 	l := NewOrdered[int]()
-	a := &Node[int]{Value: 1}
-	b := &Node[int]{Value: 2}
-	c := &Node[int]{Value: 1}
+	a := newNode(1)
+	b := newNode(2)
+	c := newNode(1)
 	l.AddNode(a)
 	l.AddNode(b)
 	l.AddNode(c)
@@ -208,9 +208,9 @@ func TestList_FindNode(t *testing.T) {
 
 func TestList_FindLastNode(t *testing.T) {
 	l := NewOrdered[int]()
-	a := &Node[int]{Value: 1}
-	b := &Node[int]{Value: 2}
-	c := &Node[int]{Value: 1}
+	a := newNode(1)
+	b := newNode(2)
+	c := newNode(1)
 	l.AddNode(a)
 	l.AddNode(b)
 	l.AddNode(c)
@@ -247,8 +247,8 @@ func TestList_GetFirst(t *testing.T) {
 
 func TestList_GetFirstNode(t *testing.T) {
 	l := NewOrdered[int]()
-	a := &Node[int]{Value: 1}
-	b := &Node[int]{Value: 2}
+	a := newNode(1)
+	b := newNode(2)
 	l.AddNode(a)
 	l.AddNode(b)
 	if l.GetFirstNode() != a {
@@ -265,8 +265,8 @@ func TestList_GetLast(t *testing.T) {
 
 func TestList_GetLastNode(t *testing.T) {
 	l := NewOrdered[int]()
-	a := &Node[int]{Value: 1}
-	b := &Node[int]{Value: 2}
+	a := newNode(1)
+	b := newNode(2)
 	l.AddNode(a)
 	l.AddNode(b)
 	if l.GetLastNode() != b {
@@ -276,9 +276,9 @@ func TestList_GetLastNode(t *testing.T) {
 
 func TestList_GetNode(t *testing.T) {
 	l := NewOrdered[int]()
-	a := &Node[int]{Value: 1}
-	b := &Node[int]{Value: 2}
-	c := &Node[int]{Value: 3}
+	a := newNode(1)
+	b := newNode(2)
+	c := newNode(3)
 	l.AddNode(a)
 	l.AddNode(b)
 	l.AddNode(c)
@@ -327,13 +327,13 @@ func TestList_LastIndexOf(t *testing.T) {
 
 func TestList_IndexOfNode(t *testing.T) {
 	l := NewOrdered[int]()
-	a := &Node[int]{Value: 1}
-	b := &Node[int]{Value: 2}
-	c := &Node[int]{Value: 1}
+	a := newNode(1)
+	b := newNode(2)
+	c := newNode(1)
 	l.AddNode(a)
 	l.AddNode(b)
 	l.AddNode(c)
-	d := &Node[int]{Value: 3}
+	d := newNode(3)
 
 	index := l.IndexOfNode(a)
 	if index != 0 {
@@ -367,8 +367,8 @@ func TestList_InsertAfter(t *testing.T) {
 
 func TestList_InsertAfterNode(t *testing.T) {
 	l := NewOrdered[int]()
-	a := &Node[int]{Value: 1}
-	b := &Node[int]{Value: 3}
+	a := newNode(1)
+	b := newNode(3)
 	l.AddNode(a) // 1
 	l.AddNode(b) // 1, 3
 
@@ -384,10 +384,10 @@ func TestList_InsertAfterNode(t *testing.T) {
 
 func TestList_InsertNodeAfterNode(t *testing.T) {
 	l := NewOrdered[int]()
-	a := &Node[int]{Value: 1}
-	b := &Node[int]{Value: 2}
-	c := &Node[int]{Value: 3}
-	d := &Node[int]{Value: 4}
+	a := newNode(1)
+	b := newNode(2)
+	c := newNode(3)
+	d := newNode(4)
 	l.AddNode(a) // 1
 	l.AddNode(c) // 1, 3
 
@@ -417,8 +417,8 @@ func TestList_InsertBefore(t *testing.T) {
 
 func TestList_InsertBeforeNode(t *testing.T) {
 	l := NewOrdered[int]()
-	a := &Node[int]{Value: 2}
-	b := &Node[int]{Value: 4}
+	a := newNode(2)
+	b := newNode(4)
 	l.AddNode(a) // 1
 	l.AddNode(b) // 1, 3
 
@@ -434,10 +434,10 @@ func TestList_InsertBeforeNode(t *testing.T) {
 
 func TestList_InsertNodeBeforeNode(t *testing.T) {
 	l := NewOrdered[int]()
-	a := &Node[int]{Value: 1}
-	b := &Node[int]{Value: 2}
-	c := &Node[int]{Value: 3}
-	d := &Node[int]{Value: 4}
+	a := newNode(1)
+	b := newNode(2)
+	c := newNode(3)
+	d := newNode(4)
 	l.AddNode(b) // 2
 	l.AddNode(d) // 2, 4
 
@@ -527,11 +527,11 @@ func TestList_Remove(t *testing.T) {
 
 func TestList_RemoveNode(t *testing.T) {
 	l := NewOrdered[int]()
-	a := &Node[int]{Value: 1}
-	b := &Node[int]{Value: 2}
-	c := &Node[int]{Value: 3}
-	d := &Node[int]{Value: 4}
-	e := &Node[int]{Value: 5}
+	a := newNode(1)
+	b := newNode(2)
+	c := newNode(3)
+	d := newNode(4)
+	e := newNode(5)
 	l.AddNode(a)
 	l.AddNode(b)
 	l.AddNode(c)

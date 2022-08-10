@@ -24,6 +24,10 @@ type Node[V any] struct {
 	Prev  *Node[V]
 }
 
+func newNode[V any](value V) *Node[V] {
+	return &Node[V]{Value: value}
+}
+
 // New creates an empty List.
 func New[V any](equal structs.EqualFunc[V]) *List[V] {
 	return &List[V]{
@@ -84,7 +88,7 @@ func (l *List[V]) AddNode(node *Node[V]) {
 
 // AddIndex adds a value at the specified index in the list.
 func (l *List[V]) AddIndex(index int, value V) {
-	l.AddIndexNode(index, &Node[V]{Value: value})
+	l.AddIndexNode(index, newNode(value))
 }
 
 // AddIndexNode adds a node at the specified index in the list.
@@ -99,7 +103,7 @@ func (l *List[V]) AddIndexNode(index int, node *Node[V]) {
 
 // AddFirst adds a value to the front of the list.
 func (l *List[V]) AddFirst(value V) bool {
-	l.AddFirstNode(&Node[V]{Value: value})
+	l.AddFirstNode(newNode(value))
 	return true
 }
 
@@ -120,7 +124,7 @@ func (l *List[V]) AddFirstNode(node *Node[V]) {
 
 // AddLast appends a value to the end of the list.
 func (l *List[V]) AddLast(value V) bool {
-	l.AddLastNode(&Node[V]{Value: value})
+	l.AddLastNode(newNode(value))
 	return true
 }
 
@@ -271,12 +275,12 @@ func (l *List[V]) IndexOfNode(node *Node[V]) int {
 // InsertAfter inserts a node after the first occurrence of an existing value in the list.
 func (l *List[V]) InsertAfter(before, value V) bool {
 	target := l.FindNode(before)
-	return l.InsertNodeAfterNode(target, &Node[V]{Value: value})
+	return l.InsertNodeAfterNode(target, newNode(value))
 }
 
 // InsertAfterNode inserts a value after an existing node in the list.
 func (l *List[V]) InsertAfterNode(target *Node[V], value V) bool {
-	return l.InsertNodeAfterNode(target, &Node[V]{Value: value})
+	return l.InsertNodeAfterNode(target, newNode(value))
 }
 
 // InsertNodeAfterNode inserts a node after an existing node in the list.
@@ -298,12 +302,12 @@ func (l *List[V]) InsertNodeAfterNode(target *Node[V], node *Node[V]) bool {
 func (l *List[V]) InsertBefore(before, value V) bool {
 	target := l.FindNode(before)
 	fmt.Println(target, value)
-	return l.InsertNodeBeforeNode(target, &Node[V]{Value: value})
+	return l.InsertNodeBeforeNode(target, newNode(value))
 }
 
 // InsertBeforeNode inserts a value before an existing node in the list.
 func (l *List[V]) InsertBeforeNode(target *Node[V], value V) bool {
-	return l.InsertNodeBeforeNode(target, &Node[V]{Value: value})
+	return l.InsertNodeBeforeNode(target, newNode(value))
 }
 
 // InsertNodeBeforeNode inserts a node before an existing node in the list.
