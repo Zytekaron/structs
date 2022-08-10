@@ -81,7 +81,7 @@ func (l *List[V]) Add(value V) bool {
 	return l.AddLast(value)
 }
 
-// AddNode appends a node to the end of the list.
+// AddNode adds a node to the end of the list.
 func (l *List[V]) AddNode(node *Node[V]) {
 	l.AddLastNode(node)
 }
@@ -107,7 +107,7 @@ func (l *List[V]) AddFirst(value V) bool {
 	return true
 }
 
-// AddFirstNode prepends a node to the front of the list.
+// AddFirstNode adds a node to the front of the list.
 func (l *List[V]) AddFirstNode(node *Node[V]) {
 	node.Prev = nil
 	if l.size == 0 {
@@ -122,13 +122,13 @@ func (l *List[V]) AddFirstNode(node *Node[V]) {
 	l.size++
 }
 
-// AddLast appends a value to the end of the list.
+// AddLast adds a value to the end of the list.
 func (l *List[V]) AddLast(value V) bool {
 	l.AddLastNode(newNode(value))
 	return true
 }
 
-// AddLastNode appends a node to the end of the list.
+// AddLastNode adds a node to the end of the list.
 func (l *List[V]) AddLastNode(node *Node[V]) {
 	node.Next = nil
 	if l.size == 0 {
@@ -148,6 +148,7 @@ func (l *List[V]) AddAll(other structs.Collection[V]) bool {
 	return l.AddIterator(other.Iterator())
 }
 
+// AddIterator adds all the values in the iterator to the list.
 func (l *List[V]) AddIterator(iter structs.Iterator[V]) bool {
 	changed := iter.HasNext()
 	for iter.HasNext() {
@@ -179,6 +180,7 @@ func (l *List[V]) ContainsAll(other structs.Collection[V]) bool {
 	return true
 }
 
+// FindNode attempts to find and return the first node with the specified value.
 func (l *List[V]) FindNode(value V) *Node[V] {
 	node := l.head
 	for node != nil {
@@ -190,6 +192,7 @@ func (l *List[V]) FindNode(value V) *Node[V] {
 	return nil
 }
 
+// FindLastNode attempts to find and return the last node with the specified value.
 func (l *List[V]) FindLastNode(value V) *Node[V] {
 	node := l.tail
 	for node != nil {
@@ -201,26 +204,32 @@ func (l *List[V]) FindLastNode(value V) *Node[V] {
 	return nil
 }
 
+// Get returns the value at the specified index.
 func (l *List[V]) Get(index int) V {
 	return l.GetNode(index).Value
 }
 
+// GetFirst returns the value at the front of the list.
 func (l *List[V]) GetFirst() V {
 	return l.head.Value
 }
 
+// GetFirstNode returns the node at the front of the list.
 func (l *List[V]) GetFirstNode() *Node[V] {
 	return l.head
 }
 
+// GetLast returns the value at the end of the list.
 func (l *List[V]) GetLast() V {
 	return l.tail.Value
 }
 
+// GetLastNode returns the node at the head of the list.
 func (l *List[V]) GetLastNode() *Node[V] {
 	return l.tail
 }
 
+// GetNode returns the node at the specified index.
 func (l *List[V]) GetNode(index int) *Node[V] {
 	if index < 0 || index >= l.size {
 		panic("index out of range")
@@ -233,6 +242,7 @@ func (l *List[V]) GetNode(index int) *Node[V] {
 	return node
 }
 
+// IndexOf returns the first index of a value in the list, otherwise -1.
 func (l *List[V]) IndexOf(value V) int {
 	index := 0
 	node := l.head
@@ -246,6 +256,7 @@ func (l *List[V]) IndexOf(value V) int {
 	return -1
 }
 
+// LastIndexOf returns the last index of a value in the list, otherwise -1.
 func (l *List[V]) LastIndexOf(value V) int {
 	index := l.size - 1
 	node := l.tail
@@ -259,6 +270,7 @@ func (l *List[V]) LastIndexOf(value V) int {
 	return -1
 }
 
+// IndexOfNode returns the index of a node in the list, otherwise -1.
 func (l *List[V]) IndexOfNode(node *Node[V]) int {
 	index := 0
 	tmp := l.head
@@ -287,7 +299,7 @@ func (l *List[V]) InsertAfterNode(target *Node[V], value V) bool {
 func (l *List[V]) InsertNodeAfterNode(target *Node[V], node *Node[V]) bool {
 	node.Prev = target
 	node.Next = target.Next
-	if target.Next != nil { // todo checkup
+	if target.Next != nil {
 		target.Next.Prev = node
 	}
 	target.Next = node
@@ -314,7 +326,7 @@ func (l *List[V]) InsertBeforeNode(target *Node[V], value V) bool {
 func (l *List[V]) InsertNodeBeforeNode(target *Node[V], node *Node[V]) bool {
 	node.Next = target
 	node.Prev = target.Prev
-	if target.Prev != nil { // todo checkup
+	if target.Prev != nil {
 		target.Prev.Next = node
 	}
 	target.Prev = node
@@ -325,10 +337,12 @@ func (l *List[V]) InsertNodeBeforeNode(target *Node[V], node *Node[V]) bool {
 	return true
 }
 
+// IsEmpty returns whether this list is empty.
 func (l *List[V]) IsEmpty() bool {
 	return l.size == 0
 }
 
+// Iterator returns a LinkedListIterator for the list.
 func (l *List[V]) Iterator() structs.Iterator[V] {
 	return &LinkedListIterator[V]{
 		list: l,
@@ -336,6 +350,7 @@ func (l *List[V]) Iterator() structs.Iterator[V] {
 	}
 }
 
+// DescendingIterator returns a LinkedListDescendingIterator for the list.
 func (l *List[V]) DescendingIterator() structs.Iterator[V] {
 	return &LinkedListDescendingIterator[V]{
 		iter: &LinkedListIterator[V]{
@@ -346,58 +361,93 @@ func (l *List[V]) DescendingIterator() structs.Iterator[V] {
 	}
 }
 
+// Offer offers a value to the linked list, adding it to the end of the list.
 func (l *List[V]) Offer(value V) bool {
-	return l.OfferFirst(value)
+	return l.OfferLast(value)
 }
 
+// OfferFirst offers a value to the linked list, adding it to the front of the list.
 func (l *List[V]) OfferFirst(value V) bool {
 	return l.AddFirst(value)
 }
 
+// OfferLast offers a value to the linked list, adding it to the end of the list.
 func (l *List[V]) OfferLast(value V) bool {
 	return l.AddLast(value)
 }
 
+// Peek returns the first value in the list.
 func (l *List[V]) Peek() V {
 	return l.PeekFirst()
 }
 
+// PeekFirst returns the first value in the list.
 func (l *List[V]) PeekFirst() V {
+	if l.IsEmpty() {
+		var null V
+		return null
+	}
 	return l.head.Value
 }
 
+// PeekLast returns the last value in the list.
 func (l *List[V]) PeekLast() V {
+	if l.IsEmpty() {
+		var null V
+		return null
+	}
 	return l.tail.Value
 }
 
+// Poll removes and returns the first value in the list,
+// or returns the zero value of the type if the list is empty.
 func (l *List[V]) Poll() V {
 	return l.PollFirst()
 }
 
+// PollFirst removes and returns the first value in the list,
+// or returns the zero value of the type if the list is empty.
 func (l *List[V]) PollFirst() V {
-	return l.RemoveNode(l.head)
+	if l.IsEmpty() {
+		var null V
+		return null
+	}
+	return l.RemoveFirst()
 }
 
+// PollLast removes and returns the last value in the list,
+// or returns the zero value of the type if the list is empty.
 func (l *List[V]) PollLast() V {
-	return l.RemoveNode(l.tail)
+	if l.IsEmpty() {
+		var null V
+		return null
+	}
+	return l.RemoveLast()
 }
 
+// Push appends a value to the end of the list.
 func (l *List[V]) Push(value V) {
 	l.AddLast(value)
 }
 
+// Pop removes and returns the first value in the list.
 func (l *List[V]) Pop() V {
 	return l.PollFirst()
 }
 
+// RemoveHead removes and returns the first value in the list.
 func (l *List[V]) RemoveHead() V {
 	return l.RemoveFirst()
 }
 
+// RemoveFirst removes and returns the first value in the list.
 func (l *List[V]) RemoveFirst() V {
-	return l.RemoveNode(l.head)
+	node := l.head
+	l.RemoveNode(node)
+	return node.Value
 }
 
+// RemoveFirstOccurrence removes the first occurrence of a value from the list.
 func (l *List[V]) RemoveFirstOccurrence(value V) bool {
 	node := l.FindNode(value)
 	if node == nil {
@@ -407,10 +457,14 @@ func (l *List[V]) RemoveFirstOccurrence(value V) bool {
 	return true
 }
 
+// RemoveLast removes and returns the last value in the list.
 func (l *List[V]) RemoveLast() V {
-	return l.RemoveNode(l.tail)
+	node := l.tail
+	l.RemoveNode(node)
+	return node.Value
 }
 
+// RemoveLastOccurrence removes the last occurrence of a value from the list.
 func (l *List[V]) RemoveLastOccurrence(value V) bool {
 	node := l.FindLastNode(value)
 	if node == nil {
@@ -431,36 +485,42 @@ func (l *List[V]) Remove(value V) bool {
 }
 
 // RemoveNode removes a node from the list.
-func (l *List[V]) RemoveNode(node *Node[V]) V {
+func (l *List[V]) RemoveNode(node *Node[V]) {
 	l.size--
 	if l.size == 0 {
 		l.head = nil
 		l.tail = nil
-		return node.Value
+		return
 	}
 	if l.head == node {
 		l.head = l.head.Next
 		node.Next.Prev = nil
-		return node.Value
+		return
 	}
 	if l.tail == node {
 		l.tail = l.tail.Prev
 		node.Prev.Next = nil
-		return node.Value
+		return
 	}
 	node.Next.Prev = node.Prev
 	node.Prev.Next = node.Next
-	return node.Value
+	node.Next = nil
+	node.Prev = nil
 }
 
-// RemoveIndex removes an element from the list by its index.
+// RemoveIndex removes the element at the specified index from the list and returns its value.
 func (l *List[V]) RemoveIndex(index int) V {
+	return l.RemoveIndexNode(index).Value
+}
+
+// RemoveIndexNode removes the node at the specified index from the list and returns it.
+func (l *List[V]) RemoveIndexNode(index int) *Node[V] {
 	node := l.GetNode(index)
 	l.RemoveNode(node)
-	return node.Value
+	return node
 }
 
-// RemoveAll removes all the values present in the other collection from the list.
+// RemoveAll removes all the values in the other collection from the list.
 func (l *List[V]) RemoveAll(other structs.Collection[V]) bool {
 	changed := false
 	node := l.head
@@ -474,6 +534,7 @@ func (l *List[V]) RemoveAll(other structs.Collection[V]) bool {
 	return changed
 }
 
+// RemoveIterator removes all the values in the iterator from the list.
 func (l *List[V]) RemoveIterator(iter structs.Iterator[V]) bool {
 	changed := false
 	for iter.HasNext() {
