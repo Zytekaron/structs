@@ -42,7 +42,7 @@ func (s *Stack[V]) AddAll(other structs.Collection[V]) bool {
 	return s.data.AddAll(other)
 }
 
-func (s *Stack[V]) AddAllIterator(iterator structs.Iterator[V]) bool {
+func (s *Stack[V]) AddIterator(iterator structs.Iterator[V]) bool {
 	return s.data.AddIterator(iterator)
 }
 
@@ -102,6 +102,10 @@ func (s *Stack[V]) Remove(value V) bool {
 
 func (s *Stack[V]) RemoveAll(other structs.Collection[V]) bool {
 	return s.data.RemoveAll(other)
+}
+
+func (s *Stack[V]) RemoveIterator(iter structs.Iterator[V]) bool {
+	return s.data.RemoveIterator(iter)
 }
 
 func (s *Stack[V]) RemoveHead() V {
