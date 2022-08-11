@@ -9,22 +9,43 @@ import (
 )
 
 // Skipped tests:
-// Size, Values
-// Add, AddNode
-// Offer, OfferFirst, OfferLast
-// Peek, Poll, Push, Pop
-// RemoveHead, RemoveFirst, RemoveLast
 // Each, EachBack, EachNode, EachNodeBack
 
 func TestNew(t *testing.T) {
 	l := NewOrdered[int]()
 	if l.Size() != 0 {
-		t.Errorf("expected new linked list size to be 0, but got %d", l.Size())
+		t.Errorf("expected new linked list size to be 0 but got %d", l.Size())
 	}
 }
 
 func TestOf(t *testing.T) {
 	l := OfOrdered(1, 2, 3)
+
+	expect := []int{1, 2, 3}
+	got := l.Values()
+	if !slices.Equal(got, expect) {
+		t.Errorf("expected list %v but got %v", expect, got)
+	}
+}
+
+func TestList_Add(t *testing.T) {
+	l := NewOrdered[int]()
+	l.Add(1)
+	l.Add(2)
+	l.Add(3)
+
+	expect := []int{1, 2, 3}
+	got := l.Values()
+	if !slices.Equal(got, expect) {
+		t.Errorf("expected list %v but got %v", expect, got)
+	}
+}
+
+func TestList_AddNode(t *testing.T) {
+	l := NewOrdered[int]()
+	l.AddNode(newNode(1))
+	l.AddNode(newNode(2))
+	l.AddNode(newNode(3))
 
 	expect := []int{1, 2, 3}
 	got := l.Values()
@@ -297,15 +318,15 @@ func TestList_IndexOf(t *testing.T) {
 	l := OfOrdered(1, 2, 1)
 	index := l.IndexOf(1)
 	if index != 0 {
-		t.Errorf("expected first index of 1 to be 0, got %v", index)
+		t.Errorf("expected first index of 1 to be 0 but got %v", index)
 	}
 	index = l.IndexOf(2)
 	if index != 1 {
-		t.Errorf("expected first index of 2 to be 1, got %v", index)
+		t.Errorf("expected first index of 2 to be 1 but got %v", index)
 	}
 	index = l.IndexOf(3)
 	if index != -1 {
-		t.Errorf("expected first index of 3 to be -1, got %v", index)
+		t.Errorf("expected first index of 3 to be -1 but got %v", index)
 	}
 }
 
@@ -313,15 +334,15 @@ func TestList_LastIndexOf(t *testing.T) {
 	l := OfOrdered(1, 2, 1)
 	index := l.LastIndexOf(1)
 	if index != 2 {
-		t.Errorf("expected first index of 1 to be 2, got %v", index)
+		t.Errorf("expected first index of 1 to be 2 but got %v", index)
 	}
 	index = l.LastIndexOf(2)
 	if index != 1 {
-		t.Errorf("expected first index of 2 to be 1, got %v", index)
+		t.Errorf("expected first index of 2 to be 1 but got %v", index)
 	}
 	index = l.LastIndexOf(3)
 	if index != -1 {
-		t.Errorf("expected first index of 3 to be -1, got %v", index)
+		t.Errorf("expected first index of 3 to be -1 but got %v", index)
 	}
 }
 
@@ -337,19 +358,19 @@ func TestList_IndexOfNode(t *testing.T) {
 
 	index := l.IndexOfNode(a)
 	if index != 0 {
-		t.Errorf("expected index of the first inserted node to be 0, got %v", index)
+		t.Errorf("expected index of the first inserted node to be 0 but got %v", index)
 	}
 	index = l.IndexOfNode(b)
 	if index != 1 {
-		t.Errorf("expected index of the middle inserted node to be 1, got %v", index)
+		t.Errorf("expected index of the middle inserted node to be 1 but got %v", index)
 	}
 	index = l.IndexOfNode(c)
 	if index != 2 {
-		t.Errorf("expected index of the last inserted node to be 2, got %v", index)
+		t.Errorf("expected index of the last inserted node to be 2 but got %v", index)
 	}
 	index = l.IndexOfNode(d)
 	if index != -1 {
-		t.Errorf("expected index of the uninserted node to be -1, got %v", index)
+		t.Errorf("expected index of the uninserted node to be -1 but got %v", index)
 	}
 }
 
@@ -462,11 +483,216 @@ func TestList_IsEmpty(t *testing.T) {
 	}
 }
 
+func TestList_Size(t *testing.T) {
+	l := NewOrdered[int]()
+	if l.Size() != 0 {
+		t.Errorf("expected size to be 0 but got %v", l.Size())
+	}
+	l.Add(1)
+	if l.Size() != 1 {
+		t.Errorf("expected size to be 1 but got %v", l.Size())
+	}
+	l.Add(2)
+	if l.Size() != 2 {
+		t.Errorf("expected size to be 2 but got %v", l.Size())
+	}
+	l.Clear()
+	if l.Size() != 0 {
+		t.Errorf("expected size to be 0 after clear but got %v", l.Size())
+	}
+}
+
+func TestList_Values(t *testing.T) {
+	l := NewOrdered[int]()
+
+	var expect []int
+	got := l.Values()
+	if !slices.Equal(got, expect) {
+		t.Errorf("expected list %v but got %v", expect, got)
+	}
+
+	l.Add(1)
+	expect = []int{1}
+	got = l.Values()
+	if !slices.Equal(got, expect) {
+		t.Errorf("expected list %v but got %v", expect, got)
+	}
+
+	l.Add(2)
+	expect = []int{1, 2}
+	got = l.Values()
+	if !slices.Equal(got, expect) {
+		t.Errorf("expected list %v but got %v", expect, got)
+	}
+}
+
+func TestList_Offer(t *testing.T) {
+	l := NewOrdered[int]()
+	l.Offer(1)
+	l.Offer(2)
+	l.Offer(3)
+
+	expect := []int{1, 2, 3}
+	got := l.Values()
+	if !slices.Equal(got, expect) {
+		t.Errorf("expected list %v but got %v", expect, got)
+	}
+}
+
+func TestList_OfferFirst(t *testing.T) {
+	l := NewOrdered[int]()
+	l.OfferFirst(3)
+	l.OfferFirst(2)
+	l.OfferFirst(1)
+
+	expect := []int{1, 2, 3}
+	got := l.Values()
+	if !slices.Equal(got, expect) {
+		t.Errorf("expected list %v but got %v", expect, got)
+	}
+}
+
+func TestList_OfferLast(t *testing.T) {
+	l := NewOrdered[int]()
+	l.OfferLast(1)
+	l.OfferLast(2)
+	l.OfferLast(3)
+
+	expect := []int{1, 2, 3}
+	got := l.Values()
+	if !slices.Equal(got, expect) {
+		t.Errorf("expected list %v but got %v", expect, got)
+	}
+}
+
+func TestList_Peek(t *testing.T) {
+	l := OfOrdered(1, 2)
+	if l.Peek() != 1 {
+		t.Errorf("expected first value to be 1")
+	}
+
+	l = NewOrdered[int]()
+	if l.Peek() != 0 {
+		t.Errorf("expected peek for empty list to be 0")
+	}
+}
+
+func TestList_PeekFirst(t *testing.T) {
+	l := OfOrdered(1, 2)
+	if l.PeekFirst() != 1 {
+		t.Errorf("expected first value to be 1")
+	}
+
+	l = NewOrdered[int]()
+	if l.PeekFirst() != 0 {
+		t.Errorf("expected peek for empty list to be 0")
+	}
+}
+
+func TestList_PeekLast(t *testing.T) {
+	l := OfOrdered(1, 2)
+	if l.PeekLast() != 2 {
+		t.Errorf("expected last value to be 2")
+	}
+
+	l = NewOrdered[int]()
+	if l.PeekLast() != 0 {
+		t.Errorf("expected peek for empty list to be 0")
+	}
+}
+
+func TestList_Poll(t *testing.T) {
+	l := OfOrdered(1, 2)
+	if l.Poll() != 1 {
+		t.Errorf("expected first value to be 1")
+	}
+}
+
+func TestList_PollFirst(t *testing.T) {
+	l := OfOrdered(1, 2)
+	if l.PollFirst() != 1 {
+		t.Errorf("expected first value to be 1")
+	}
+}
+
+func TestList_PollLast(t *testing.T) {
+	l := OfOrdered(1, 2)
+	if l.PollLast() != 2 {
+		t.Errorf("expected last value to be 2")
+	}
+}
+
+func TestList_Push(t *testing.T) {
+	l := NewOrdered[int]()
+	l.Push(3)
+	l.Push(2)
+	l.Push(1)
+
+	expect := []int{1, 2, 3}
+	got := l.Values()
+	if !slices.Equal(got, expect) {
+		t.Errorf("expected list %v but got %v", expect, got)
+	}
+}
+
+func TestList_Pop(t *testing.T) {
+	l := OfOrdered(1, 2, 3)
+	value := l.Pop()
+	if value != 1 {
+		t.Errorf("expected first popped value to be 1 but got %v", value)
+	}
+	value = l.Pop()
+	if value != 2 {
+		t.Errorf("expected first popped value to be 2 but got %v", value)
+	}
+	value = l.Pop()
+	if value != 3 {
+		t.Errorf("expected first popped value to be 3 but got %v", value)
+	}
+
+	if !l.IsEmpty() {
+		t.Errorf("expected popped out list to be empty, ")
+	}
+}
+
+func TestList_RemoveHead(t *testing.T) {
+	l := OfOrdered(1, 2, 3, 4, 5)
+
+	value := l.RemoveHead()
+	if value != 1 {
+		t.Errorf("expected first removed value to be 1 but got %v", value)
+	}
+	value = l.RemoveHead()
+	if value != 2 {
+		t.Errorf("expected second removed value to be 2 but got %v", value)
+	}
+	value = l.RemoveHead()
+	if value != 3 {
+		t.Errorf("expected third removed value to be 3 but got %v", value)
+	}
+
+	expect := []int{4, 5}
+	got := l.Values()
+	if !slices.Equal(got, expect) {
+		t.Errorf("expected list %v but got %v", expect, got)
+	}
+}
+
 func TestList_RemoveFirst(t *testing.T) {
 	l := OfOrdered(1, 2, 3, 4, 5)
-	l.RemoveFirst()
-	l.RemoveFirst()
-	l.RemoveFirst()
+
+	value := l.RemoveFirst()
+	if value != 1 {
+		t.Errorf("expected first removed value to be 1 but got %v", value)
+	}
+	value = l.RemoveFirst()
+	if value != 2 {
+		t.Errorf("expected second removed value to be 2 but got %v", value)
+	}
+	value = l.RemoveFirst()
+	if value != 3 {
+		t.Errorf("expected third removed value to be 3 but got %v", value)
+	}
 
 	expect := []int{4, 5}
 	got := l.Values()
@@ -477,9 +703,19 @@ func TestList_RemoveFirst(t *testing.T) {
 
 func TestList_RemoveLast(t *testing.T) {
 	l := OfOrdered(1, 2, 3, 4, 5)
-	l.RemoveLast()
-	l.RemoveLast()
-	l.RemoveLast()
+
+	value := l.RemoveLast()
+	if value != 5 {
+		t.Errorf("expected first removed value to be 5 but got %v", value)
+	}
+	value = l.RemoveLast()
+	if value != 4 {
+		t.Errorf("expected second removed value to be 4 but got %v", value)
+	}
+	value = l.RemoveLast()
+	if value != 3 {
+		t.Errorf("expected third removed value to be 3 but got %v", value)
+	}
 
 	expect := []int{1, 2}
 	got := l.Values()

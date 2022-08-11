@@ -376,12 +376,14 @@ func (l *List[V]) OfferLast(value V) bool {
 	return l.AddLast(value)
 }
 
-// Peek returns the first value in the list.
+// Peek returns the first value in the list, or
+// the zero value of the type if the list is empty.
 func (l *List[V]) Peek() V {
 	return l.PeekFirst()
 }
 
-// PeekFirst returns the first value in the list.
+// PeekFirst returns the first value in the list, or
+// the zero value of the type if the list is empty.
 func (l *List[V]) PeekFirst() V {
 	if l.IsEmpty() {
 		var null V
@@ -390,7 +392,8 @@ func (l *List[V]) PeekFirst() V {
 	return l.head.Value
 }
 
-// PeekLast returns the last value in the list.
+// PeekLast returns the last value in the list, or
+// the zero value of the type if the list is empty.
 func (l *List[V]) PeekLast() V {
 	if l.IsEmpty() {
 		var null V
@@ -425,9 +428,9 @@ func (l *List[V]) PollLast() V {
 	return l.RemoveLast()
 }
 
-// Push appends a value to the end of the list.
+// Push appends a value to the front of the list.
 func (l *List[V]) Push(value V) {
-	l.AddLast(value)
+	l.AddFirst(value)
 }
 
 // Pop removes and returns the first value in the list.
@@ -504,8 +507,6 @@ func (l *List[V]) RemoveNode(node *Node[V]) {
 	}
 	node.Next.Prev = node.Prev
 	node.Prev.Next = node.Next
-	node.Next = nil
-	node.Prev = nil
 }
 
 // RemoveIndex removes the element at the specified index from the list and returns its value.
@@ -522,16 +523,7 @@ func (l *List[V]) RemoveIndexNode(index int) *Node[V] {
 
 // RemoveAll removes all the values in the other collection from the list.
 func (l *List[V]) RemoveAll(other structs.Collection[V]) bool {
-	changed := false
-	node := l.head
-	for node != nil {
-		if other.Contains(node.Value) {
-			l.RemoveNode(node)
-			changed = true
-		}
-		node = node.Next
-	}
-	return changed
+	return l.RemoveIterator(other.Iterator())
 }
 
 // RemoveIterator removes all the values in the iterator from the list.
