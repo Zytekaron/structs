@@ -23,6 +23,7 @@ type Collection[V any] interface {
 	Clear()
 	Contains(value V) bool
 	ContainsAll(other Collection[V]) bool
+	ContainsIterator(iter Iterator[V]) bool
 	IsEmpty() bool
 	Iterator() Iterator[V]
 	Remove(value V) bool
