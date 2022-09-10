@@ -1,6 +1,6 @@
 # structs
 
-**version:** v0.1.0
+**version:** v0.1.1
 
 ### This library is not production-ready. Use it only in testing environments.
 
