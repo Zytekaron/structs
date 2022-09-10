@@ -88,9 +88,14 @@ func (s *MapSet[V]) Remove(value V) bool {
 }
 
 func (s *MapSet[V]) RemoveAll(other structs.Collection[V]) bool {
+	return s.RemoveIterator(other.Iterator())
+}
+
+func (s *MapSet[V]) RemoveIterator(iter structs.Iterator[V]) bool {
 	changed := false
-	for value := range s.data {
-		if other.Contains(value) {
+	for iter.HasNext() {
+		value := iter.Next()
+		if s.Contains(value) {
 			delete(s.data, value)
 			changed = true
 		}
