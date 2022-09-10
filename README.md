@@ -1,5 +1,7 @@
 # structs
 
+**version:** v0.1.0
+
 ### This library is not production-ready. Use it only in testing environments.
 
 This project is an effort to provide a variety of data structures
