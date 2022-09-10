@@ -46,6 +46,6 @@ func (i *Iterator[V]) Remove() {
 	}
 	if i.lastReturned != nil {
 		i.heap.Remove(*i.lastReturned)
-		*i.lastReturned = nil
+		i.lastReturned = nil
 	}
 }
