@@ -9,8 +9,8 @@ func TestSlice(t *testing.T) {
 		s[i] = i
 	}
 
-	Slice(s)
-	Values(s...)
+	Slice(nil, s)
+	Values(nil, s...)
 	// todo: no meaningful test right now,
 	//  so just testing for panics :shrug:
 }

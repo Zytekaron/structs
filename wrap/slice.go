@@ -62,10 +62,12 @@ func (s *SliceWrap[V]) Contains(value V) bool {
 }
 
 func (s *SliceWrap[V]) ContainsAll(other structs.Collection[V]) bool {
-	it := other.Iterator()
-	for it.HasNext() {
-		value := it.Next()
-		if !s.Contains(value) {
+	return s.ContainsIterator(other.Iterator())
+}
+
+func (s *SliceWrap[V]) ContainsIterator(iter structs.Iterator[V]) bool {
+	for iter.HasNext() {
+		if !s.Contains(iter.Next()) {
 			return false
 		}
 	}
