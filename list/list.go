@@ -11,8 +11,8 @@ import (
 
 // List is an implementation of a doubly-linked list.
 //
-// Removal operations: removed node's pointers remain
-// intact unless the node is re-inserted into a list.
+// The value equality function may be omitted (nil)
+// if no methods are called which use it.
 type List[V any] struct {
 	eq   structs.EqualFunc[V]
 	head *Node[V]
@@ -199,8 +199,9 @@ func (l *List[V]) Contains(value V) bool {
 // ContainsAll returns whether all the values in the other collection are present the list.
 //
 // Time Complexity: O(nm)
-//  n = size of the current list
-//  m = size of the other collection
+//
+//	n = size of the current list
+//	m = size of the other collection
 func (l *List[V]) ContainsAll(other structs.Collection[V]) bool {
 	return l.ContainsIterator(other.Iterator())
 }
@@ -208,8 +209,9 @@ func (l *List[V]) ContainsAll(other structs.Collection[V]) bool {
 // ContainsIterator returns whether all the values in the iterator are present the list.
 //
 // Time Complexity: O(nm)
-//  n = size of the current list
-//  m = number of values in the iterator
+//
+//	n = size of the current list
+//	m = number of values in the iterator
 func (l *List[V]) ContainsIterator(iter structs.Iterator[V]) bool {
 	for iter.HasNext() {
 		if !l.Contains(iter.Next()) {
@@ -415,18 +417,18 @@ func (l *List[V]) IsEmpty() bool {
 	return l.size == 0
 }
 
-// Iterator returns a LinkedListIterator for the list.
+// Iterator returns a Iterator for the list.
 func (l *List[V]) Iterator() structs.Iterator[V] {
-	return &LinkedListIterator[V]{
+	return &Iterator[V]{
 		list: l,
 		next: l.head,
 	}
 }
 
-// DescendingIterator returns a LinkedListDescendingIterator for the list.
+// DescendingIterator returns a DescendingIterator for the list.
 func (l *List[V]) DescendingIterator() structs.Iterator[V] {
-	return &LinkedListDescendingIterator[V]{
-		iter: &LinkedListIterator[V]{
+	return &DescendingIterator[V]{
+		iter: &Iterator[V]{
 			list:  l,
 			prev:  l.tail,
 			index: l.size,
@@ -637,8 +639,9 @@ func (l *List[V]) RemoveIndexNode(index int) *Node[V] {
 // RemoveAll removes all the values in the other collection from the list.
 //
 // Time Complexity: O(nm)
-//  n = size of the current list
-//  m = size of the other collection
+//
+//	n = size of the current list
+//	m = size of the other collection
 func (l *List[V]) RemoveAll(other structs.Collection[V]) bool {
 	return l.RemoveIterator(other.Iterator())
 }
@@ -646,8 +649,9 @@ func (l *List[V]) RemoveAll(other structs.Collection[V]) bool {
 // RemoveIterator removes all the values in the iterator from the list.
 //
 // Time Complexity: O(nm)
-//  n = size of the current list
-//  m = number of values in the iterator
+//
+//	n = size of the current list
+//	m = number of values in the iterator
 func (l *List[V]) RemoveIterator(iter structs.Iterator[V]) bool {
 	changed := false
 	for iter.HasNext() {
@@ -662,8 +666,9 @@ func (l *List[V]) RemoveIterator(iter structs.Iterator[V]) bool {
 // RetainAll removes all the values not present in the other collection from the list.
 //
 // Time Complexity: O(nm)
-//  n = size of the current list
-//  m = time complexity of Contains on the other collection
+//
+//	n = size of the current list
+//	m = time complexity of Contains on the other collection
 func (l *List[V]) RetainAll(other structs.Collection[V]) bool {
 	changed := false
 	node := l.head
