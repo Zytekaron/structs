@@ -1,6 +1,6 @@
 package list
 
-type LinkedListIterator[V any] struct {
+type Iterator[V any] struct {
 	list  *List[V]
 	prev  *Node[V]
 	next  *Node[V]
@@ -8,103 +8,103 @@ type LinkedListIterator[V any] struct {
 	index int
 }
 
-func (i *LinkedListIterator[V]) HasNext() bool {
-	return i.next != nil
+func (it *Iterator[V]) HasNext() bool {
+	return it.next != nil
 }
 
-func (i *LinkedListIterator[V]) HasPrevious() bool {
-	return i.prev != nil
+func (it *Iterator[V]) HasPrevious() bool {
+	return it.prev != nil
 }
 
-func (i *LinkedListIterator[V]) Next() V {
-	if i.next == nil {
+func (it *Iterator[V]) Next() V {
+	if it.next == nil {
 		panic("next called on exhausted iterator")
 	}
-	i.index++
+	it.index++
 
-	this := i.next // value to return
-	i.last, i.prev = this, this
-	i.next = this.Next
+	this := it.next // value to return
+	it.last, it.prev = this, this
+	it.next = this.Next
 	return this.Value
 }
 
-func (i *LinkedListIterator[V]) NextIndex() int {
-	return i.index
+func (it *Iterator[V]) NextIndex() int {
+	return it.index
 }
 
-func (i *LinkedListIterator[V]) Previous() V {
-	if i.prev == nil {
+func (it *Iterator[V]) Previous() V {
+	if it.prev == nil {
 		panic("previous called on unused iterator")
 	}
-	i.index--
+	it.index--
 
-	this := i.prev // value to return
-	i.last, i.next = this, this
-	i.prev = this.Prev
+	this := it.prev // value to return
+	it.last, it.next = this, this
+	it.prev = this.Prev
 	return this.Value
 }
 
-func (i *LinkedListIterator[V]) PreviousIndex() int {
-	return i.index - 1
+func (it *Iterator[V]) PreviousIndex() int {
+	return it.index - 1
 }
 
-func (i *LinkedListIterator[V]) Remove() {
-	if i.prev == nil {
+func (it *Iterator[V]) Remove() {
+	if it.prev == nil {
 		panic("remove called on unused iterator")
 	}
 	// if removing the previous value (by list order),
 	// decrease the index due to a left shift of data
-	if i.last == i.prev {
-		i.index--
+	if it.last == it.prev {
+		it.index--
 	}
 
-	this := i.last
-	i.next = this.Next
-	i.prev = this.Prev
+	this := it.last
+	it.next = this.Next
+	it.prev = this.Prev
 
-	i.list.RemoveNode(this)
-	i.last = nil
+	it.list.RemoveNode(this)
+	it.last = nil
 }
 
-func (i *LinkedListIterator[V]) Set(value V) {
-	if i.last == nil {
+func (it *Iterator[V]) Set(value V) {
+	if it.last == nil {
 		panic("set called on invalid iterator state")
 	}
-	i.last.Value = value
+	it.last.Value = value
 }
 
-type LinkedListDescendingIterator[V any] struct {
-	iter *LinkedListIterator[V]
+type DescendingIterator[V any] struct {
+	iter *Iterator[V]
 }
 
-func (i *LinkedListDescendingIterator[V]) HasNext() bool {
-	return i.iter.HasPrevious()
+func (it *DescendingIterator[V]) HasNext() bool {
+	return it.iter.HasPrevious()
 }
 
-func (i *LinkedListDescendingIterator[V]) HasPrevious() bool {
-	return i.iter.HasNext()
+func (it *DescendingIterator[V]) HasPrevious() bool {
+	return it.iter.HasNext()
 }
 
-func (i *LinkedListDescendingIterator[V]) Next() V {
-	return i.iter.Previous()
+func (it *DescendingIterator[V]) Next() V {
+	return it.iter.Previous()
 }
 
-func (i *LinkedListDescendingIterator[V]) NextIndex() int {
-	return i.iter.PreviousIndex()
+func (it *DescendingIterator[V]) NextIndex() int {
+	return it.iter.PreviousIndex()
 }
 
-func (i *LinkedListDescendingIterator[V]) Previous() V {
-	return i.iter.Next()
+func (it *DescendingIterator[V]) Previous() V {
+	return it.iter.Next()
 }
 
-func (i *LinkedListDescendingIterator[V]) PreviousIndex() int {
-	return i.iter.NextIndex()
+func (it *DescendingIterator[V]) PreviousIndex() int {
+	return it.iter.NextIndex()
 }
 
-func (i *LinkedListDescendingIterator[V]) Remove() {
-	i.iter.Remove()
+func (it *DescendingIterator[V]) Remove() {
+	it.iter.Remove()
 }
 
-func (i *LinkedListDescendingIterator[V]) Set(value V) {
-	i.iter.Set(value)
+func (it *DescendingIterator[V]) Set(value V) {
+	it.iter.Set(value)
 }
