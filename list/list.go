@@ -15,20 +15,28 @@ import (
 // if no methods are called which use it.
 type List[V any] struct {
 	eq   structs.EqualFunc[V]
-	head *Node[V]
-	tail *Node[V]
+	head *listNode[V]
+	tail *listNode[V]
 	size int
 }
 
-// Node is a linked list node.
-type Node[V any] struct {
+// listNode is a linked list listNode.
+type listNode[V any] struct {
 	Value V
-	Next  *Node[V]
-	Prev  *Node[V]
+	Prev  *listNode[V]
+	Next  *listNode[V]
 }
 
-func newNode[V any](value V) *Node[V] {
-	return &Node[V]{Value: value}
+func newNode[V any](value V) *listNode[V] {
+	return &listNode[V]{Value: value}
+}
+
+func newFullNode[V any](value V, prev, next *listNode[V]) *listNode[V] {
+	return &listNode[V]{
+		Value: value,
+		Prev:  prev,
+		Next:  next,
+	}
 }
 
 // New creates an empty List.
@@ -86,80 +94,25 @@ func (l *List[V]) Add(value V) bool {
 	return l.AddLast(value)
 }
 
-// AddNode adds a node to the end of the list.
+// AddAt adds a value at the specified index in the list.
 //
-// Time Complexity: O(1)
-func (l *List[V]) AddNode(node *Node[V]) {
-	l.AddLastNode(node)
-}
-
-// AddIndex adds a value at the specified index in the list.
+// Panics if the index is out of bounds.
 //
 // Time Complexity: O(n)
-func (l *List[V]) AddIndex(index int, value V) {
-	l.AddIndexNode(index, newNode(value))
-}
+func (l *List[V]) AddAt(index int, value V) {
+	l.checkBounds(index, true)
 
-// AddIndexNode adds a node at the specified index in the list.
-//
-// Time Complexity: O(n)
-func (l *List[V]) AddIndexNode(index int, node *Node[V]) {
 	if index == 0 {
-		l.AddFirstNode(node)
+		l.AddFirst(value)
 		return
 	}
-	target := l.GetNode(index - 1)
-	l.InsertNodeAfterNode(target, node)
-}
-
-// AddFirst adds a value to the front of the list.
-//
-// Time Complexity: O(1)
-func (l *List[V]) AddFirst(value V) bool {
-	l.AddFirstNode(newNode(value))
-	return true
-}
-
-// AddFirstNode adds a node to the front of the list.
-//
-// Time Complexity: O(1)
-func (l *List[V]) AddFirstNode(node *Node[V]) {
-	node.Prev = nil
-	if l.size == 0 {
-		node.Next = nil
-		l.head = node
-		l.tail = node
-	} else {
-		node.Next = l.head
-		l.head.Prev = node
-		l.head = node
+	if index == l.size {
+		l.AddLast(value)
+		return
 	}
-	l.size++
-}
 
-// AddLast adds a value to the end of the list.
-//
-// Time Complexity: O(1)
-func (l *List[V]) AddLast(value V) bool {
-	l.AddLastNode(newNode(value))
-	return true
-}
-
-// AddLastNode adds a node to the end of the list.
-//
-// Time Complexity: O(1)
-func (l *List[V]) AddLastNode(node *Node[V]) {
-	node.Next = nil
-	if l.size == 0 {
-		node.Prev = nil
-		l.head = node
-		l.tail = node
-	} else {
-		node.Prev = l.tail
-		l.tail.Next = node
-		l.tail = node
-	}
-	l.size++
+	target := l.getNodeAt(index - 1)
+	l.insertAfterNode(target, value)
 }
 
 // AddAll adds all the values in the other collection to the end of the list.
@@ -169,6 +122,32 @@ func (l *List[V]) AddAll(other structs.Collection[V]) bool {
 	return l.AddIterator(other.Iterator())
 }
 
+// AddAllAt adds all the values in the other collection to the list,
+// starting at the index provided and shifting existing elements right.
+//
+// Panics if the index is out of bounds.
+//
+// Time Complexity: O(n)
+func (l *List[V]) AddAllAt(index int, other structs.Collection[V]) bool {
+	return l.AddIteratorAt(index, other.Iterator())
+}
+
+// AddFirst adds a value to the front of the list.
+//
+// Time Complexity: O(1)
+func (l *List[V]) AddFirst(value V) bool {
+	l.addFirstNode(newNode(value))
+	return true
+}
+
+// AddLast adds a value to the end of the list.
+//
+// Time Complexity: O(1)
+func (l *List[V]) AddLast(value V) bool {
+	l.addLastNode(newNode(value))
+	return true
+}
+
 // AddIterator adds all the values in the iterator to the list.
 //
 // Time Complexity: O(n)
@@ -176,6 +155,23 @@ func (l *List[V]) AddIterator(iter structs.Iterator[V]) bool {
 	changed := iter.HasNext()
 	for iter.HasNext() {
 		l.Add(iter.Next())
+	}
+	return changed
+}
+
+// AddIteratorAt adds all the values in the iterator to the list,
+// starting at the index provided and shifting existing elements right.
+//
+// Panics if the index is out of bounds.
+//
+// Time Complexity: O(n)
+func (l *List[V]) AddIteratorAt(index int, iter structs.Iterator[V]) bool {
+	l.checkBounds(index, true)
+
+	changed := iter.HasNext()
+	node := l.getNodeAt(index)
+	for iter.HasNext() {
+		node = l.insertAfterNode(node, iter.Next())
 	}
 	return changed
 }
@@ -221,85 +217,37 @@ func (l *List[V]) ContainsIterator(iter structs.Iterator[V]) bool {
 	return true
 }
 
-// FindNode attempts to find and return the first node with the specified value.
-//
-// Time Complexity: O(n)
-func (l *List[V]) FindNode(value V) *Node[V] {
-	node := l.head
-	for node != nil {
-		if l.eq(node.Value, value) {
-			return node
-		}
-		node = node.Next
-	}
-	return nil
-}
-
-// FindLastNode attempts to find and return the last node with the specified value.
-//
-// Time Complexity: O(n)
-func (l *List[V]) FindLastNode(value V) *Node[V] {
-	node := l.tail
-	for node != nil {
-		if l.eq(node.Value, value) {
-			return node
-		}
-		node = node.Prev
-	}
-	return nil
-}
-
 // Get returns the value at the specified index.
+//
+// Panics if the index is out of bounds.
 //
 // Time Complexity: O(n)
 func (l *List[V]) Get(index int) V {
-	return l.GetNode(index).Value
+	l.checkBounds(index, false)
+
+	return l.getNodeAt(index).Value
 }
 
 // GetFirst returns the value at the front of the list.
 //
 // Time Complexity: O(1)
 func (l *List[V]) GetFirst() V {
-	return l.head.Value
-}
+	l.checkEmpty()
 
-// GetFirstNode returns the node at the front of the list.
-//
-// Time Complexity: O(1)
-func (l *List[V]) GetFirstNode() *Node[V] {
-	return l.head
+	return l.head.Value
 }
 
 // GetLast returns the value at the end of the list.
 //
 // Time Complexity: O(1)
 func (l *List[V]) GetLast() V {
+	l.checkEmpty()
+
 	return l.tail.Value
 }
 
-// GetLastNode returns the node at the head of the list.
-//
-// Time Complexity: O(1)
-func (l *List[V]) GetLastNode() *Node[V] {
-	return l.tail
-}
-
-// GetNode returns the node at the specified index.
-//
-// Time Complexity: O(n)
-func (l *List[V]) GetNode(index int) *Node[V] {
-	if index < 0 || index >= l.size {
-		panic("index out of range")
-	}
-	node := l.head
-	for index > 0 {
-		node = node.Next
-		index--
-	}
-	return node
-}
-
-// IndexOf returns the first index of a value in the list, otherwise -1.
+// IndexOf returns the first index of a value in the list,
+// or -1 if the value is not present in the list.
 //
 // Time Complexity: O(n)
 func (l *List[V]) IndexOf(value V) int {
@@ -315,7 +263,8 @@ func (l *List[V]) IndexOf(value V) int {
 	return -1
 }
 
-// LastIndexOf returns the last index of a value in the list, otherwise -1.
+// LastIndexOf returns the last index of a value in the list,
+// or -1 if the value is not present in the list.
 //
 // Time Complexity: O(n)
 func (l *List[V]) LastIndexOf(value V) int {
@@ -331,84 +280,21 @@ func (l *List[V]) LastIndexOf(value V) int {
 	return -1
 }
 
-// IndexOfNode returns the index of a node in the list, otherwise -1.
-//
-// Time Complexity: O(n)
-func (l *List[V]) IndexOfNode(node *Node[V]) int {
-	index := 0
-	tmp := l.head
-	for tmp != nil {
-		if tmp == node {
-			return index
-		}
-		index++
-		tmp = tmp.Next
-	}
-	return -1
-}
-
-// InsertAfter inserts a node after the first occurrence of an existing value in the list.
+// InsertAfter inserts a value after the first occurrence of an existing value in the list.
 //
 // Time Complexity: O(n)
 func (l *List[V]) InsertAfter(before, value V) bool {
-	target := l.FindNode(before)
-	return l.InsertNodeAfterNode(target, newNode(value))
-}
-
-// InsertAfterNode inserts a value after an existing node in the list.
-//
-// Time Complexity: O(1)
-func (l *List[V]) InsertAfterNode(target *Node[V], value V) bool {
-	return l.InsertNodeAfterNode(target, newNode(value))
-}
-
-// InsertNodeAfterNode inserts a node after an existing node in the list.
-//
-// Time Complexity: O(1)
-func (l *List[V]) InsertNodeAfterNode(target *Node[V], node *Node[V]) bool {
-	node.Prev = target
-	node.Next = target.Next
-	if target.Next != nil {
-		target.Next.Prev = node
-	}
-	target.Next = node
-	if target == l.tail {
-		l.tail = node
-	}
-	l.size++
+	target := l.findNode(before)
+	l.insertAfterNode(target, value)
 	return true
 }
 
-// InsertBefore inserts a node before the first occurrence of an existing value in the list.
+// InsertBefore inserts a value before the first occurrence of an existing value in the list.
 //
 // Time Complexity: O(n)
 func (l *List[V]) InsertBefore(before, value V) bool {
-	target := l.FindNode(before)
-	fmt.Println(target, value)
-	return l.InsertNodeBeforeNode(target, newNode(value))
-}
-
-// InsertBeforeNode inserts a value before an existing node in the list.
-//
-// Time Complexity: O(1)
-func (l *List[V]) InsertBeforeNode(target *Node[V], value V) bool {
-	return l.InsertNodeBeforeNode(target, newNode(value))
-}
-
-// InsertNodeBeforeNode inserts a node before an existing node in the list.
-//
-// Time Complexity: O(1)
-func (l *List[V]) InsertNodeBeforeNode(target *Node[V], node *Node[V]) bool {
-	node.Next = target
-	node.Prev = target.Prev
-	if target.Prev != nil {
-		target.Prev.Next = node
-	}
-	target.Prev = node
-	if target == l.head {
-		l.head = node
-	}
-	l.size++
+	target := l.findNode(before)
+	l.insertBeforeNode(target, value)
 	return true
 }
 
@@ -417,7 +303,7 @@ func (l *List[V]) IsEmpty() bool {
 	return l.size == 0
 }
 
-// Iterator returns a Iterator for the list.
+// Iterator returns an Iterator for the list.
 func (l *List[V]) Iterator() structs.Iterator[V] {
 	return &Iterator[V]{
 		list: l,
@@ -506,7 +392,7 @@ func (l *List[V]) PollFirst() V {
 		var null V
 		return null
 	}
-	return l.RemoveFirst()
+	return l.removeNode(l.head)
 }
 
 // PollLast removes and returns the last value in the list,
@@ -518,7 +404,7 @@ func (l *List[V]) PollLast() V {
 		var null V
 		return null
 	}
-	return l.RemoveLast()
+	return l.removeNode(l.tail)
 }
 
 // Push appends a value to the front of the list.
@@ -530,12 +416,16 @@ func (l *List[V]) Push(value V) {
 
 // Pop removes and returns the first value in the list.
 //
+// Panics if the list is empty.
+//
 // Time Complexity: O(1)
 func (l *List[V]) Pop() V {
-	return l.PollFirst()
+	return l.RemoveFirst()
 }
 
 // RemoveHead removes and returns the first value in the list.
+//
+// Panics if the list is empty.
 //
 // Time Complexity: O(1)
 func (l *List[V]) RemoveHead() V {
@@ -544,96 +434,73 @@ func (l *List[V]) RemoveHead() V {
 
 // RemoveFirst removes and returns the first value in the list.
 //
+// Panics if the list is empty.
+//
 // Time Complexity: O(1)
 func (l *List[V]) RemoveFirst() V {
-	node := l.head
-	l.RemoveNode(node)
-	return node.Value
+	l.checkEmpty()
+
+	return l.removeNode(l.head)
 }
 
-// RemoveFirstOccurrence removes the first occurrence of a value from the list.
+// RemoveFirstOccurrence removes the first occurrence of a value
+// from the list and returns whether the value was present.
 //
 // Time Complexity: O(n)
 func (l *List[V]) RemoveFirstOccurrence(value V) bool {
-	node := l.FindNode(value)
+	node := l.findNode(value)
 	if node == nil {
 		return false
 	}
-	l.RemoveNode(node)
+	l.removeNode(node)
 	return true
 }
 
 // RemoveLast removes and returns the last value in the list.
 //
+// Panics if the list is empty.
+//
 // Time Complexity: O(1)
 func (l *List[V]) RemoveLast() V {
-	node := l.tail
-	l.RemoveNode(node)
-	return node.Value
+	l.checkEmpty()
+
+	return l.removeNode(l.tail)
 }
 
-// RemoveLastOccurrence removes the last occurrence of a value from the list.
+// RemoveLastOccurrence removes the last occurrence of a value
+// from the list and returns whether the value was present.
 //
 // Time Complexity: O(n)
 func (l *List[V]) RemoveLastOccurrence(value V) bool {
-	node := l.FindLastNode(value)
+	node := l.findLastNode(value)
 	if node == nil {
 		return false
 	}
-	l.RemoveNode(node)
+	l.removeNode(node)
 	return true
 }
 
-// Remove removes a value from the list.
+// Remove removes a value from the list and returns whether the value was present.
 //
 // Time Complexity: O(n)
 func (l *List[V]) Remove(value V) bool {
-	node := l.FindNode(value)
+	node := l.findNode(value)
 	if node == nil {
 		return false
 	}
-	l.RemoveNode(node)
+	l.removeNode(node)
 	return true
 }
 
-// RemoveNode removes a node from the list.
+// RemoveAt removes the value at the specified index from the list and returns its value.
 //
-// Time Complexity: O(1)
-func (l *List[V]) RemoveNode(node *Node[V]) {
-	l.size--
-	if l.size == 0 {
-		l.head = nil
-		l.tail = nil
-		return
-	}
-	if l.head == node {
-		l.head = l.head.Next
-		node.Next.Prev = nil
-		return
-	}
-	if l.tail == node {
-		l.tail = l.tail.Prev
-		node.Prev.Next = nil
-		return
-	}
-	node.Next.Prev = node.Prev
-	node.Prev.Next = node.Next
-}
-
-// RemoveIndex removes the element at the specified index from the list and returns its value.
+// Panics if the index is out of bounds.
 //
 // Time Complexity: O(n)
-func (l *List[V]) RemoveIndex(index int) V {
-	return l.RemoveIndexNode(index).Value
-}
+func (l *List[V]) RemoveAt(index int) V {
+	l.checkBounds(index, false)
 
-// RemoveIndexNode removes the node at the specified index from the list and returns it.
-//
-// Time Complexity: O(n)
-func (l *List[V]) RemoveIndexNode(index int) *Node[V] {
-	node := l.GetNode(index)
-	l.RemoveNode(node)
-	return node
+	return l.removeNodeAt(index).Value
 }
 
 // RemoveAll removes all the values in the other collection from the list.
@@ -674,7 +541,7 @@ func (l *List[V]) RetainAll(other structs.Collection[V]) bool {
 	node := l.head
 	for node != nil {
 		if !other.Contains(node.Value) {
-			l.RemoveNode(node)
+			l.removeNode(node)
 			changed = true
 		}
 		node = node.Next
@@ -701,15 +568,23 @@ func (l *List[V]) Reverse() {
 
 // Set sets the value at the specified index, returning the old value.
 //
+// Panics if the index is out of bounds.
+//
 // Time Complexity: O(n)
 func (l *List[V]) Set(index int, value V) V {
-	node := l.GetNode(index)
+	l.checkBounds(index, false)
+
+	node := l.getNodeAt(index)
 	oldValue := node.Value
 	node.Value = value
 	return oldValue
 }
 
 // Sort sorts the list based on a comparator.
+//
+// This method extracts an array using Values and reconstructs
+// the entire list from scratch. If the list cannot be fully
+// represented as an array, this method won't work.
 //
 // Time Complexity: best case O(nlogn), worst case O(n^2).
 // See slices.SortFunc (algorithm: pattern-defeating quicksort).
@@ -730,7 +605,7 @@ func (l *List[V]) Size() int {
 	return l.size
 }
 
-// Values return a slice of the values in the list.
+// Values return a slice of the values in the list, starting at the front of the list.
 //
 // Time Complexity: O(n)
 //
@@ -745,7 +620,22 @@ func (l *List[V]) Values() []V {
 	return values
 }
 
-// Clone creates a new list with the same values, starting at the front.
+// ValuesReverse return a slice of the values in the list, starting at the end of the list.
+//
+// Time Complexity: O(n)
+//
+// Space Complexity: O(n)
+func (l *List[V]) ValuesReverse() []V {
+	values := make([]V, 0, l.size)
+	node := l.tail
+	for node != nil {
+		values = append(values, node.Value)
+		node = node.Prev
+	}
+	return values
+}
+
+// Clone creates a new list with the same values, starting at the front of the list.
 //
 // Time Complexity: O(n)
 //
@@ -760,12 +650,12 @@ func (l *List[V]) Clone() *List[V] {
 	return list
 }
 
-// CloneBack creates a new list with the same values, starting at the back.
+// CloneReverse creates a new list with the same values, starting at the end of the list.
 //
 // Time Complexity: O(n)
 //
 // Space Complexity: O(n)
-func (l *List[V]) CloneBack() *List[V] {
+func (l *List[V]) CloneReverse() *List[V] {
 	list := New[V](l.eq)
 	node := l.tail
 	for node != nil {
@@ -775,7 +665,7 @@ func (l *List[V]) CloneBack() *List[V] {
 	return list
 }
 
-// Each calls a function for each value in the list, starting at the front.
+// Each calls a function for each value in the list, starting at the front of the list.
 func (l *List[V]) Each(f func(value V)) {
 	node := l.head
 	for node != nil {
@@ -784,29 +674,11 @@ func (l *List[V]) Each(f func(value V)) {
 	}
 }
 
-// EachNode calls a function for each element in the list, starting at the front.
-func (l *List[V]) EachNode(f func(node *Node[V])) {
-	node := l.head
-	for node != nil {
-		f(node)
-		node = node.Next
-	}
-}
-
-// EachBack calls a function for each value in the list, starting at the end.
-func (l *List[V]) EachBack(f func(value V)) {
+// EachReverse calls a function for each value in the list, starting at the end of the list.
+func (l *List[V]) EachReverse(f func(value V)) {
 	node := l.tail
 	for node != nil {
 		f(node.Value)
-		node = node.Prev
-	}
-}
-
-// EachNodeBack calls a function for each element in the list, starting at the end.
-func (l *List[V]) EachNodeBack(f func(node *Node[V])) {
-	node := l.tail
-	for node != nil {
-		f(node)
 		node = node.Prev
 	}
 }
@@ -830,4 +702,185 @@ func (l *List[V]) String() string {
 
 	buf.WriteRune(']')
 	return buf.String()
+}
+
+// addFirstNode adds a listNode to the front of the list.
+//
+// Time Complexity: O(1)
+func (l *List[V]) addFirstNode(node *listNode[V]) {
+	node.Prev = nil
+	if l.size == 0 {
+		node.Next = nil
+		l.head = node
+		l.tail = node
+	} else {
+		node.Next = l.head
+		l.head.Prev = node
+		l.head = node
+	}
+	l.size++
+}
+
+// addLastNode adds a listNode to the end of the list.
+//
+// Time Complexity: O(1)
+func (l *List[V]) addLastNode(node *listNode[V]) {
+	node.Next = nil
+	if l.size == 0 {
+		node.Prev = nil
+		l.head = node
+		l.tail = node
+	} else {
+		node.Prev = l.tail
+		l.tail.Next = node
+		l.tail = node
+	}
+	l.size++
+}
+
+// insertAfterNode inserts a listNode after an existing listNode in the list.
+//
+// Time Complexity: O(1)
+func (l *List[V]) insertAfterNode(target *listNode[V], value V) *listNode[V] {
+	node := newFullNode(value, target, target.Next)
+	if target.Next != nil {
+		target.Next.Prev = node
+	}
+	target.Next = node
+	if target == l.tail {
+		l.tail = node
+	}
+	l.size++
+	return node
+}
+
+// insertBeforeNode inserts a listNode before an existing listNode in the list.
+//
+// Time Complexity: O(1)
+func (l *List[V]) insertBeforeNode(target *listNode[V], value V) *listNode[V] {
+	node := newFullNode(value, target, target.Prev)
+	if target.Prev != nil {
+		target.Prev.Next = node
+	}
+	target.Prev = node
+	if target == l.head {
+		l.head = node
+	}
+	l.size++
+	return node
+}
+
+// getNodeAt returns the listNode at the specified index.
+//
+// bounds checking should be performed prior to calling.
+//
+// Time Complexity: O(n)
+func (l *List[V]) getNodeAt(index int) *listNode[V] {
+	if index < 0 || index >= l.size {
+		panic("index out of range")
+	}
+	node := l.head
+	for index > 0 {
+		node = node.Next
+		index--
+	}
+	return node
+}
+
+// indexOfNode returns the index of a listNode in the list, otherwise -1.
+//
+// Time Complexity: O(n)
+func (l *List[V]) indexOfNode(node *listNode[V]) int {
+	index := 0
+	tmp := l.head
+	for tmp != nil {
+		if tmp == node {
+			return index
+		}
+		index++
+		tmp = tmp.Next
+	}
+	return -1
+}
+
+// findNode attempts to find and return the first listNode with the specified value.
+//
+// Time Complexity: O(n)
+func (l *List[V]) findNode(value V) *listNode[V] {
+	node := l.head
+	for node != nil {
+		if l.eq(node.Value, value) {
+			return node
+		}
+		node = node.Next
+	}
+	return nil
+}
+
+// findLastNode attempts to find and return the last listNode with the specified value.
+//
+// Time Complexity: O(n)
+func (l *List[V]) findLastNode(value V) *listNode[V] {
+	node := l.tail
+	for node != nil {
+		if l.eq(node.Value, value) {
+			return node
+		}
+		node = node.Prev
+	}
+	return nil
+}
+
+// removeNode removes a listNode from the list.
+//
+// Time Complexity: O(1)
+func (l *List[V]) removeNode(node *listNode[V]) V {
+	l.size--
+	if l.size == 0 {
+		l.head = nil
+		l.tail = nil
+		return node.Value
+	}
+	if l.head == node {
+		l.head = l.head.Next
+		node.Next.Prev = nil
+		return node.Value
+	}
+	if l.tail == node {
+		l.tail = l.tail.Prev
+		node.Prev.Next = nil
+		return node.Value
+	}
+	node.Next.Prev = node.Prev
+	node.Prev.Next = node.Next
+	return node.Value
+}
+
+// removeNodeAt removes the listNode at the specified index from the list and returns it.
+//
+// bounds checking should be performed prior to calling.
+//
+// Time Complexity: O(n)
+func (l *List[V]) removeNodeAt(index int) *listNode[V] {
+	node := l.getNodeAt(index)
+	l.removeNode(node)
+	return node
+}
+
+// checkEmpty panics if the list is empty. used to display useful
+// errors in methods which rely on the head/tail being non-nil.
+func (l *List[V]) checkEmpty() {
+	if l.IsEmpty() {
+		panic("list is empty")
+	}
+}
+
+// checkBounds checks whether an index is within the checkBounds of the list.
+//
+// if allowEnd is true, index == l.size is allowed. this is useful
+// for operations which may insert after the list's tail.
+func (l *List[V]) checkBounds(index int, allowEnd bool) {
+	if index < 0 || index > l.size || (!allowEnd && index == l.size) {
+		panic("index out of bounds")
+	}
 }
