@@ -37,24 +37,15 @@ type Collection[V any] interface {
 type List[V any] interface {
 	Collection[V]
 
-	AddIndex(index int, value V)
+	AddAt(index int, value V)
 	Get(index int) V
 	IndexOf(value V) int
 	LastIndexOf(value V) int
-	RemoveIndex(index int) V
+	RemoveAt(index int) V
 	Set(index int, value V) V
 	Sort(cmp LessFunc[V])
 	//SubList(from, to int) List[V]
 }
-
-//type SortedList[V comparable] interface {
-//	List[V]
-//
-//	First() V
-//	Last() V
-//	HeadList(value V) SortedList[V]
-//	TailList(value V) SortedList[V]
-//}
 
 type Set[V any] interface {
 	Collection[V]
@@ -103,4 +94,13 @@ type Deque[V any] interface {
 	RemoveFirstOccurrence(value V) bool
 	RemoveLast() V
 	RemoveLastOccurrence(value V) bool
+}
+
+type Map[K, V any] interface {
+	ContainsKey(key K) bool
+	ContainsValue(value V) bool
+	Get(key K) V
+	Put(key K, value V) V
+	Remove(key K) V
+	Size() int
 }
