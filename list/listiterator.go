@@ -2,9 +2,9 @@ package list
 
 type Iterator[V any] struct {
 	list  *List[V]
-	prev  *Node[V]
-	next  *Node[V]
-	last  *Node[V] // last value returned
+	prev  *listNode[V]
+	next  *listNode[V]
+	last  *listNode[V] // last value returned
 	index int
 }
 
@@ -62,7 +62,7 @@ func (it *Iterator[V]) Remove() {
 	it.next = this.Next
 	it.prev = this.Prev
 
-	it.list.RemoveNode(this)
+	it.list.removeNode(this)
 	it.last = nil
 }
 
