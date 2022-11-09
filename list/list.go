@@ -758,7 +758,7 @@ func (l *List[V]) insertAfterNode(target *listNode[V], value V) *listNode[V] {
 //
 // Time Complexity: O(1)
 func (l *List[V]) insertBeforeNode(target *listNode[V], value V) *listNode[V] {
-	node := newFullNode(value, target, target.Prev)
+	node := newFullNode(value, target.Prev, target)
 	if target.Prev != nil {
 		target.Prev.Next = node
 	}
