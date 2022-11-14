@@ -9,7 +9,7 @@ func TestSliceIterator(t *testing.T) {
 		s[i] = i
 	}
 
-	sw := Slice(s)
+	sw := Slice(nil, s)
 	it := sw.Iterator()
 
 	expect := 0
