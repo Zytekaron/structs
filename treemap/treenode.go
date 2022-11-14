@@ -99,3 +99,7 @@ func (n *treeNode[K, V]) successor() *treeNode[K, V] {
 
 	return parent
 }
+
+func (n *treeNode[K, V]) isBlack() bool {
+	return n == nil || n.Black
+}

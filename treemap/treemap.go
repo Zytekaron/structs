@@ -177,13 +177,13 @@ func (t *TreeMap[K, V]) insertFixup(node *treeNode[K, V]) {
 		return
 	}
 
-	if isBlack(node.Parent) {
+	if node.Parent.isBlack() {
 		return
 	}
 
 	uncle := node.uncle()
 	grandparent := node.grandparent()
-	if !isBlack(uncle) {
+	if !uncle.isBlack() {
 		node.Parent.Black = true
 		uncle.Black = true
 		grandparent.Black = false
@@ -214,7 +214,7 @@ func (t *TreeMap[K, V]) removeFixup(node *treeNode[K, V]) {
 	}
 
 	sibling := node.sibling()
-	if !isBlack(sibling) {
+	if !sibling.isBlack() {
 		node.Parent.Black = false
 		sibling.Black = true
 		if node == node.Parent.Left {
@@ -224,8 +224,8 @@ func (t *TreeMap[K, V]) removeFixup(node *treeNode[K, V]) {
 		}
 	}
 
-	if isBlack(sibling) && isBlack(sibling.Left) && isBlack(sibling.Right) {
-		if isBlack(node.Parent) {
+	if sibling.isBlack() && sibling.Left.isBlack() && sibling.Right.isBlack() {
+		if node.Parent.isBlack() {
 			sibling.Black = false
 			t.removeFixup(node.Parent)
 		} else {
@@ -235,22 +235,22 @@ func (t *TreeMap[K, V]) removeFixup(node *treeNode[K, V]) {
 		return
 	}
 
-	if node == node.Parent.Left && isBlack(sibling) && !isBlack(sibling.Left) && isBlack(sibling.Right) {
+	if node == node.Parent.Left && sibling.isBlack() && !sibling.Left.isBlack() && sibling.Right.isBlack() {
 		sibling.Black = false
 		sibling.Left.Black = true
 		t.rotateRight(sibling)
-	} else if node == node.Parent.Right && isBlack(sibling) && !isBlack(sibling.Right) && isBlack(sibling.Left) {
+	} else if node == node.Parent.Right && sibling.isBlack() && !sibling.Right.isBlack() && sibling.Left.isBlack() {
 		sibling.Black = false
 		sibling.Right.Black = true
 		t.rotateLeft(sibling)
 	}
 
-	sibling.Black = isBlack(node.Parent)
+	sibling.Black = node.Parent.isBlack()
 	node.Parent.Black = true
-	if node == node.Parent.Left && !isBlack(sibling.Right) {
+	if node == node.Parent.Left && !sibling.Right.isBlack() {
 		sibling.Right.Black = true
 		t.rotateLeft(node.Parent)
-	} else if !isBlack(sibling.Left) {
+	} else if !sibling.Left.isBlack() {
 		sibling.Left.Black = false
 		t.rotateRight(node.Parent)
 	}
@@ -356,7 +356,7 @@ func (t *TreeMap[K, V]) removeNode(node *treeNode[K, V]) {
 			child = node.Right
 		}
 		if node.Black {
-			node.Black = isBlack(child)
+			node.Black = child.isBlack()
 			t.removeFixup(node)
 		}
 		t.replace(node, child)
@@ -381,8 +381,4 @@ func (t *TreeMap[K, V]) nodeIteratorAt(node *treeNode[K, V]) *nodeIterator[K, V]
 		next:    node,
 		last:    nil,
 	}
-}
-
-func isBlack[K, V any](node *treeNode[K, V]) bool {
-	return node == nil || node.Black
 }
