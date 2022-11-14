@@ -2,28 +2,47 @@ package treemap
 
 import (
 	"github.com/zytekaron/structs"
+	"golang.org/x/exp/constraints"
 )
 
+// TreeMap is an implementation of a red-black tree.
+//
+// The key comparison function must be provided to
+// use most methods, but the value comparison
+// function may be omitted (nil) if no methods that
+// are called depend on value equality (ie ContainsValue).
 type TreeMap[K, V any] struct {
 	keyCmp structs.CompareFunc[K]
-	valCmp structs.CompareFunc[V]
+	valEq  structs.EqualFunc[V]
 	root   *TreeNode[K, V]
 	size   int
 }
 
-type TreeNode[K, V any] struct {
-	Key    K
-	Value  V
-	Black  bool
-	Parent *TreeNode[K, V]
-	Left   *TreeNode[K, V]
-	Right  *TreeNode[K, V]
-}
-
-func New[K, V any](keyCompare structs.CompareFunc[K], valueCompare structs.CompareFunc[V]) *TreeMap[K, V] {
+func New[K, V any](keyCompare structs.CompareFunc[K], valueEqual structs.EqualFunc[V]) *TreeMap[K, V] {
 	return &TreeMap[K, V]{
 		keyCmp: keyCompare,
-		valCmp: valueCompare,
+		valEq:  valueEqual,
+	}
+}
+
+func NewOrdered[K, V constraints.Ordered]() *TreeMap[K, V] {
+	return &TreeMap[K, V]{
+		keyCmp: structs.CompareOrdered[K],
+		valEq:  structs.EqualOrdered[V],
+	}
+}
+
+func NewOrderedKeys[K constraints.Ordered, V any](valueEqual structs.EqualFunc[V]) *TreeMap[K, V] {
+	return &TreeMap[K, V]{
+		keyCmp: structs.CompareOrdered[K],
+		valEq:  valueEqual,
+	}
+}
+
+func NewOrderedValues[K any, V constraints.Ordered](keyCompare structs.CompareFunc[K]) *TreeMap[K, V] {
+	return &TreeMap[K, V]{
+		keyCmp: keyCompare,
+		valEq:  structs.EqualOrdered[V],
 	}
 }
 
@@ -35,7 +54,7 @@ func (t *TreeMap[K, V]) ContainsValue(value V) bool {
 	return t.FindNode(value) != nil
 }
 
-func (t *TreeMap[K, V]) GetValue(key K) V {
+func (t *TreeMap[K, V]) Get(key K) V {
 	node := t.GetNode(key)
 	if node == nil {
 		var null V
@@ -72,77 +91,103 @@ func (t *TreeMap[K, V]) GetNode(key K) *TreeNode[K, V] {
 func (t *TreeMap[K, V]) FindNode(value V) *TreeNode[K, V] {
 	node := t.root
 	for node != nil {
-		cmp := t.valCmp(value, node.Value)
-		if cmp == 0 {
+		if t.valEq(value, node.Value) {
 			break
 		}
-		if cmp < 0 {
-			node = node.Left
-		} else {
-			node = node.Right
+		node = node.successor()
+	}
+	return node
+}
+
+func (t *TreeMap[K, V]) FindLastNode(value V) *TreeNode[K, V] {
+	node := t.GetLastNode()
+	for node != nil {
+		if t.valEq(value, node.Value) {
+			break
 		}
+		node = node.predecessor()
 	}
 	return node
 }
 
 func (t *TreeMap[K, V]) Put(key K, value V) V {
-	node := t.root
-	if node == nil {
-		t.root = &TreeNode[K, V]{
-			Key:   key,
-			Value: value,
-		}
+	if t.root == nil {
+		t.root = newNode(key, value, true)
 		t.size = 1
 		var null V
 		return null
 	}
 
-	var cmp int
-	var parent *TreeNode[K, V]
-	// duplicate code since go doesn't have a do/for
-	parent = node
-	cmp = t.keyCmp(key, node.Key)
-	if cmp == 0 {
-		node.Value = value
-		var null V
-		return null
-	}
-	if cmp < 0 {
-		node = node.Left
-	} else {
-		node = node.Right
-	}
-	for parent != nil {
-		// duplicate code since go doesn't have a do/for
-		parent = node
-		cmp = t.keyCmp(key, node.Key)
-		if cmp == 0 {
+	var inserted *TreeNode[K, V]
+	node := t.root
+loop:
+	for {
+		cmp := t.keyCmp(key, node.Key)
+		switch {
+		case cmp == 0:
+			oldValue := node.Value
+			node.Key = key
 			node.Value = value
-			var null V
-			return null
-		}
-		if cmp < 0 {
+			return oldValue
+		case cmp < 0:
+			if node.Left == nil {
+				node.Left = newNode(key, value, false)
+				inserted = node.Left
+				break loop
+			}
 			node = node.Left
-		} else {
+		case cmp > 0:
+			if node.Right == nil {
+				node.Right = newNode(key, value, false)
+				inserted = node.Right
+				break loop
+			}
 			node = node.Right
 		}
 	}
+	inserted.Parent = node
 
-	newNode := &TreeNode[K, V]{
-		Parent: parent,
-		Key:    key,
-		Value:  value,
-	}
-	if cmp < 0 {
-		parent.Left = newNode
-	} else {
-		parent.Right = newNode
-	}
-
-	t.insertFixup(newNode)
+	t.insertFixup(inserted)
 	t.size++
 	var null V
 	return null
+}
+
+func (t *TreeMap[K, V]) Remove(key K) V {
+	node := t.GetNode(key)
+	if node == nil {
+		var null V
+		return null
+	}
+	deletedValue := node.Value
+	t.RemoveNode(node)
+	return deletedValue
+}
+
+func (t *TreeMap[K, V]) RemoveNode(node *TreeNode[K, V]) {
+	var child *TreeNode[K, V]
+	if node.Left != nil && node.Right != nil {
+		prev := node.Left.maximumNode()
+		node.Key = prev.Key
+		node.Value = prev.Value
+		node = prev
+	}
+	if node.Left == nil || node.Right == nil {
+		if node.Right == nil {
+			child = node.Left
+		} else {
+			child = node.Right
+		}
+		if node.Black {
+			node.Black = isBlack(child)
+			t.removeFixup(node)
+		}
+		t.replace(node, child)
+		if node.Parent == nil && child != nil {
+			child.Black = true
+		}
+	}
+	t.size--
 }
 
 func (t *TreeMap[K, V]) Size() int {
@@ -154,121 +199,199 @@ func (t *TreeMap[K, V]) Clear() {
 	t.size = 0
 }
 
-func (t *TreeMap[K, V]) insertFixup(x *TreeNode[K, V]) {
-	x.Black = x == t.root
-	for x != t.root && !x.Parent.Black {
-		if x.Parent == x.Parent.Parent.Left {
-			y := x.Parent.Parent.Right
-			if y != nil && !y.Black {
-				y.Black = true
-				x = x.Parent
-				x.Black = true
-				x = x.Parent
-				x.Black = x == t.root
-			} else {
-				if x != x.Parent.Left {
-					x = x.Parent
-					rotateLeft(x)
-				}
-				x = x.Parent
-				x.Black = true
-				x = x.Parent
-				x.Black = false
-				rotateRight(x)
-				break
-			}
+func (t *TreeMap[K, V]) GetLastNode() *TreeNode[K, V] {
+	node := t.root
+	if node != nil {
+		for node.Right != nil {
+			node = node.Right
+		}
+	}
+	return node
+}
+
+func (t *TreeMap[K, V]) NodeIterator() *NodeIterator[K, V] {
+	return &NodeIterator[K, V]{
+		treemap: t,
+		next:    t.root,
+		last:    nil,
+	}
+}
+
+// DescendingNodeIterator returns a NodeIterator initialized to the end of the TreeMap.
+func (t *TreeMap[K, V]) DescendingNodeIterator() *NodeIterator[K, V] {
+	return &NodeIterator[K, V]{
+		treemap: t,
+		next:    t.root,
+		last:    nil,
+	}
+}
+
+func (t *TreeMap[K, V]) EntryIterator() *EntryIterator[K, V] {
+	return &EntryIterator[K, V]{
+		iter: t.NodeIterator(),
+	}
+}
+
+func (t *TreeMap[K, V]) DescendingEntryIterator() *EntryIterator[K, V] {
+	return &EntryIterator[K, V]{
+		iter: t.DescendingNodeIterator(),
+	}
+}
+
+func (t *TreeMap[K, V]) NodeIteratorAt(node *TreeNode[K, V]) *NodeIterator[K, V] {
+	return &NodeIterator[K, V]{
+		treemap: t,
+		next:    node,
+		last:    nil,
+	}
+}
+
+func (t *TreeMap[K, V]) KeyIterator() *KeyIterator[K, V] {
+	return &KeyIterator[K, V]{
+		iter: t.NodeIterator(),
+	}
+}
+
+func (t *TreeMap[K, V]) DescendingKeyIterator() *DescendingKeyIterator[K, V] {
+	return &DescendingKeyIterator[K, V]{
+		iter: t.DescendingNodeIterator(),
+	}
+}
+
+func (t *TreeMap[K, V]) Iterator() *ValueIterator[K, V] {
+	return &ValueIterator[K, V]{
+		iter: t.NodeIterator(),
+	}
+}
+
+func (t *TreeMap[K, V]) DescendingIterator() *ValueIterator[K, V] {
+	return &ValueIterator[K, V]{
+		iter: t.DescendingNodeIterator(),
+	}
+}
+
+func (t *TreeMap[K, V]) insertFixup(node *TreeNode[K, V]) {
+	if node.Parent == nil {
+		node.Black = true
+		return
+	}
+
+	if isBlack(node.Parent) {
+		return
+	}
+
+	uncle := node.uncle()
+	grandparent := node.grandparent()
+	if !isBlack(uncle) {
+		node.Parent.Black = true
+		uncle.Black = true
+		grandparent.Black = false
+		t.insertFixup(grandparent)
+		return
+	}
+
+	if node == node.Parent.Right && node.Parent == grandparent.Left {
+		t.rotateLeft(node.Parent)
+		node = node.Left
+	} else if node == node.Parent.Left && node.Parent == grandparent.Right {
+		t.rotateRight(node.Parent)
+		node = node.Right
+	}
+
+	node.Parent.Black = true
+	grandparent.Black = false
+	if node == node.Parent.Left && node.Parent == grandparent.Left {
+		t.rotateRight(grandparent)
+	} else if node == node.Parent.Right && node.Parent == grandparent.Right {
+		t.rotateLeft(grandparent)
+	}
+}
+
+func (t *TreeMap[K, V]) removeFixup(node *TreeNode[K, V]) {
+	if node.Parent == nil {
+		return
+	}
+
+	sibling := node.sibling()
+	if !isBlack(sibling) {
+		node.Parent.Black = false
+		sibling.Black = true
+		if node == node.Parent.Left {
+			t.rotateLeft(node.Parent)
 		} else {
-			y := x.Parent.Parent.Left
-			if y != nil && !y.Black {
-				y.Black = true
-				x = x.Parent
-				x.Black = true
-				x = x.Parent
-				x.Black = x == t.root
-			} else {
-				if x == x.Parent.Left {
-					x = x.Parent
-					rotateRight(x)
-				}
-				x = x.Parent
-				x.Black = true
-				x = x.Parent
-				x.Black = false
-				rotateLeft(x)
-				break
-			}
+			t.rotateRight(node.Parent)
 		}
+	}
+
+	if isBlack(sibling) && isBlack(sibling.Left) && isBlack(sibling.Right) {
+		if isBlack(node.Parent) {
+			sibling.Black = false
+			t.removeFixup(node.Parent)
+		} else {
+			sibling.Black = false
+			node.Parent.Black = true
+		}
+		return
+	}
+
+	if node == node.Parent.Left && isBlack(sibling) && !isBlack(sibling.Left) && isBlack(sibling.Right) {
+		sibling.Black = false
+		sibling.Left.Black = true
+		t.rotateRight(sibling)
+	} else if node == node.Parent.Right && isBlack(sibling) && !isBlack(sibling.Right) && isBlack(sibling.Left) {
+		sibling.Black = false
+		sibling.Right.Black = true
+		t.rotateLeft(sibling)
+	}
+
+	sibling.Black = isBlack(node.Parent)
+	node.Parent.Black = true
+	if node == node.Parent.Left && !isBlack(sibling.Right) {
+		sibling.Right.Black = true
+		t.rotateLeft(node.Parent)
+	} else if !isBlack(sibling.Left) {
+		sibling.Left.Black = false
+		t.rotateRight(node.Parent)
 	}
 }
 
-func successor[K, V any](node *TreeNode[K, V]) *TreeNode[K, V] {
-	if node == nil {
-		return nil
+func (t *TreeMap[K, V]) rotateLeft(node *TreeNode[K, V]) {
+	right := node.Right
+	t.replace(node, right)
+	node.Right = right.Left
+	if right.Left != nil {
+		right.Left.Parent = node
 	}
-	if node.Right != nil {
-		p := node.Right
-		for p.Left != nil {
-			p = p.Left
-		}
-		return p
-	}
-	parent := node.Parent
-	n := node
-	for n == nil && n == parent.Right {
-		n = parent
-		parent = parent.Parent
-	}
-	return parent
+	right.Left = node
+	node.Parent = right
 }
 
-func predecessor[K, V any](node *TreeNode[K, V]) *TreeNode[K, V] {
-	if node == nil {
-		return nil
+func (t *TreeMap[K, V]) rotateRight(node *TreeNode[K, V]) {
+	left := node.Left
+	t.replace(node, left)
+	node.Left = left.Right
+	if left.Right != nil {
+		left.Right.Parent = node
 	}
-	if node.Left != nil {
-		p := node.Left
-		for p.Right != nil {
-			p = p.Right
-		}
-		return p
-	}
-	parent := node.Parent
-	n := node
-	for n == nil && n == parent.Left {
-		n = parent
-		parent = parent.Parent
-	}
-	return parent
+	left.Right = node
+	node.Parent = left
 }
 
-func rotateLeft[K, V any](x *TreeNode[K, V]) {
-	y := x.Right
-	x.Right = y.Left
-	if x.Right != nil {
-		x.Right.Parent = x
-	}
-	y.Parent = x.Parent
-	if x == x.Parent.Left {
-		x.Parent.Left = y
+func (t *TreeMap[K, V]) replace(oldNode *TreeNode[K, V], newNode *TreeNode[K, V]) {
+	if oldNode.Parent == nil {
+		t.root = newNode
 	} else {
-		x.Parent.Right = y
+		if oldNode == oldNode.Parent.Left {
+			oldNode.Parent.Left = newNode
+		} else {
+			oldNode.Parent.Right = newNode
+		}
 	}
-	y.Left = x
-	x.Parent = y
+	if newNode != nil {
+		newNode.Parent = oldNode.Parent
+	}
 }
 
-func rotateRight[K, V any](x *TreeNode[K, V]) {
-	y := x.Left
-	x.Left = y.Right
-	if x.Left != nil {
-		x.Left.Parent = x
-	}
-	y.Parent = x.Parent
-	if x == x.Parent.Left {
-		x.Parent.Left = y
-	} else {
-		x.Parent.Right = y
-	}
-	y.Right = x
-	x.Parent = y
+func isBlack[K, V any](node *TreeNode[K, V]) bool {
+	return node == nil || node.Black
 }
