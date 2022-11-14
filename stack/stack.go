@@ -93,7 +93,7 @@ func (s *Stack[V]) Peek() V {
 }
 
 func (s *Stack[V]) Poll() V {
-	return s.data.RemoveIndex(0)
+	return s.data.RemoveAt(0)
 }
 
 func (s *Stack[V]) Remove(value V) bool {
