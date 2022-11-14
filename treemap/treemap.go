@@ -14,7 +14,7 @@ import (
 type TreeMap[K, V any] struct {
 	keyCmp structs.CompareFunc[K]
 	valEq  structs.EqualFunc[V]
-	root   *TreeNode[K, V]
+	root   *treeNode[K, V]
 	size   int
 }
 
@@ -47,15 +47,15 @@ func NewOrderedValues[K any, V constraints.Ordered](keyCompare structs.CompareFu
 }
 
 func (t *TreeMap[K, V]) ContainsKey(key K) bool {
-	return t.GetNode(key) != nil
+	return t.getNode(key) != nil
 }
 
 func (t *TreeMap[K, V]) ContainsValue(value V) bool {
-	return t.FindNode(value) != nil
+	return t.findNode(value) != nil
 }
 
 func (t *TreeMap[K, V]) Get(key K) V {
-	node := t.GetNode(key)
+	node := t.getNode(key)
 	if node == nil {
 		var null V
 		return null
@@ -64,50 +64,12 @@ func (t *TreeMap[K, V]) Get(key K) V {
 }
 
 func (t *TreeMap[K, V]) GetKey(value V) K {
-	node := t.FindNode(value)
+	node := t.findNode(value)
 	if node == nil {
 		var null K
 		return null
 	}
 	return node.Key
-}
-
-func (t *TreeMap[K, V]) GetNode(key K) *TreeNode[K, V] {
-	node := t.root
-	for node != nil {
-		cmp := t.keyCmp(key, node.Key)
-		if cmp == 0 {
-			break
-		}
-		if cmp < 0 {
-			node = node.Left
-		} else {
-			node = node.Right
-		}
-	}
-	return node
-}
-
-func (t *TreeMap[K, V]) FindNode(value V) *TreeNode[K, V] {
-	node := t.root
-	for node != nil {
-		if t.valEq(value, node.Value) {
-			break
-		}
-		node = node.successor()
-	}
-	return node
-}
-
-func (t *TreeMap[K, V]) FindLastNode(value V) *TreeNode[K, V] {
-	node := t.GetLastNode()
-	for node != nil {
-		if t.valEq(value, node.Value) {
-			break
-		}
-		node = node.predecessor()
-	}
-	return node
 }
 
 func (t *TreeMap[K, V]) Put(key K, value V) V {
@@ -118,7 +80,7 @@ func (t *TreeMap[K, V]) Put(key K, value V) V {
 		return null
 	}
 
-	var inserted *TreeNode[K, V]
+	var inserted *treeNode[K, V]
 	node := t.root
 loop:
 	for {
@@ -154,40 +116,14 @@ loop:
 }
 
 func (t *TreeMap[K, V]) Remove(key K) V {
-	node := t.GetNode(key)
+	node := t.getNode(key)
 	if node == nil {
 		var null V
 		return null
 	}
 	deletedValue := node.Value
-	t.RemoveNode(node)
+	t.removeNode(node)
 	return deletedValue
-}
-
-func (t *TreeMap[K, V]) RemoveNode(node *TreeNode[K, V]) {
-	var child *TreeNode[K, V]
-	if node.Left != nil && node.Right != nil {
-		prev := node.Left.maximumNode()
-		node.Key = prev.Key
-		node.Value = prev.Value
-		node = prev
-	}
-	if node.Left == nil || node.Right == nil {
-		if node.Right == nil {
-			child = node.Left
-		} else {
-			child = node.Right
-		}
-		if node.Black {
-			node.Black = isBlack(child)
-			t.removeFixup(node)
-		}
-		t.replace(node, child)
-		if node.Parent == nil && child != nil {
-			child.Black = true
-		}
-	}
-	t.size--
 }
 
 func (t *TreeMap[K, V]) Size() int {
@@ -199,78 +135,43 @@ func (t *TreeMap[K, V]) Clear() {
 	t.size = 0
 }
 
-func (t *TreeMap[K, V]) GetLastNode() *TreeNode[K, V] {
-	node := t.root
-	if node != nil {
-		for node.Right != nil {
-			node = node.Right
-		}
-	}
-	return node
-}
-
-func (t *TreeMap[K, V]) NodeIterator() *NodeIterator[K, V] {
-	return &NodeIterator[K, V]{
-		treemap: t,
-		next:    t.root,
-		last:    nil,
-	}
-}
-
-// DescendingNodeIterator returns a NodeIterator initialized to the end of the TreeMap.
-func (t *TreeMap[K, V]) DescendingNodeIterator() *NodeIterator[K, V] {
-	return &NodeIterator[K, V]{
-		treemap: t,
-		next:    t.root,
-		last:    nil,
-	}
-}
-
 func (t *TreeMap[K, V]) EntryIterator() *EntryIterator[K, V] {
 	return &EntryIterator[K, V]{
-		iter: t.NodeIterator(),
+		iter: t.nodeIterator(),
 	}
 }
 
 func (t *TreeMap[K, V]) DescendingEntryIterator() *EntryIterator[K, V] {
 	return &EntryIterator[K, V]{
-		iter: t.DescendingNodeIterator(),
-	}
-}
-
-func (t *TreeMap[K, V]) NodeIteratorAt(node *TreeNode[K, V]) *NodeIterator[K, V] {
-	return &NodeIterator[K, V]{
-		treemap: t,
-		next:    node,
-		last:    nil,
+		iter: t.descendingNodeIterator(),
 	}
 }
 
 func (t *TreeMap[K, V]) KeyIterator() *KeyIterator[K, V] {
 	return &KeyIterator[K, V]{
-		iter: t.NodeIterator(),
+		iter: t.nodeIterator(),
 	}
 }
 
 func (t *TreeMap[K, V]) DescendingKeyIterator() *DescendingKeyIterator[K, V] {
 	return &DescendingKeyIterator[K, V]{
-		iter: t.DescendingNodeIterator(),
+		iter: t.descendingNodeIterator(),
 	}
 }
 
 func (t *TreeMap[K, V]) Iterator() *ValueIterator[K, V] {
 	return &ValueIterator[K, V]{
-		iter: t.NodeIterator(),
+		iter: t.nodeIterator(),
 	}
 }
 
 func (t *TreeMap[K, V]) DescendingIterator() *ValueIterator[K, V] {
 	return &ValueIterator[K, V]{
-		iter: t.DescendingNodeIterator(),
+		iter: t.descendingNodeIterator(),
 	}
 }
 
-func (t *TreeMap[K, V]) insertFixup(node *TreeNode[K, V]) {
+func (t *TreeMap[K, V]) insertFixup(node *treeNode[K, V]) {
 	if node.Parent == nil {
 		node.Black = true
 		return
@@ -307,7 +208,7 @@ func (t *TreeMap[K, V]) insertFixup(node *TreeNode[K, V]) {
 	}
 }
 
-func (t *TreeMap[K, V]) removeFixup(node *TreeNode[K, V]) {
+func (t *TreeMap[K, V]) removeFixup(node *treeNode[K, V]) {
 	if node.Parent == nil {
 		return
 	}
@@ -355,7 +256,7 @@ func (t *TreeMap[K, V]) removeFixup(node *TreeNode[K, V]) {
 	}
 }
 
-func (t *TreeMap[K, V]) rotateLeft(node *TreeNode[K, V]) {
+func (t *TreeMap[K, V]) rotateLeft(node *treeNode[K, V]) {
 	right := node.Right
 	t.replace(node, right)
 	node.Right = right.Left
@@ -366,7 +267,7 @@ func (t *TreeMap[K, V]) rotateLeft(node *TreeNode[K, V]) {
 	node.Parent = right
 }
 
-func (t *TreeMap[K, V]) rotateRight(node *TreeNode[K, V]) {
+func (t *TreeMap[K, V]) rotateRight(node *treeNode[K, V]) {
 	left := node.Left
 	t.replace(node, left)
 	node.Left = left.Right
@@ -377,7 +278,7 @@ func (t *TreeMap[K, V]) rotateRight(node *TreeNode[K, V]) {
 	node.Parent = left
 }
 
-func (t *TreeMap[K, V]) replace(oldNode *TreeNode[K, V], newNode *TreeNode[K, V]) {
+func (t *TreeMap[K, V]) replace(oldNode *treeNode[K, V], newNode *treeNode[K, V]) {
 	if oldNode.Parent == nil {
 		t.root = newNode
 	} else {
@@ -392,6 +293,96 @@ func (t *TreeMap[K, V]) replace(oldNode *TreeNode[K, V], newNode *TreeNode[K, V]
 	}
 }
 
-func isBlack[K, V any](node *TreeNode[K, V]) bool {
+func (t *TreeMap[K, V]) getNode(key K) *treeNode[K, V] {
+	node := t.root
+	for node != nil {
+		cmp := t.keyCmp(key, node.Key)
+		if cmp == 0 {
+			break
+		}
+		if cmp < 0 {
+			node = node.Left
+		} else {
+			node = node.Right
+		}
+	}
+	return node
+}
+
+func (t *TreeMap[K, V]) getLastNode() *treeNode[K, V] {
+	node := t.root
+	if node != nil {
+		for node.Right != nil {
+			node = node.Right
+		}
+	}
+	return node
+}
+
+func (t *TreeMap[K, V]) findNode(value V) *treeNode[K, V] {
+	node := t.root
+	for node != nil {
+		if t.valEq(value, node.Value) {
+			break
+		}
+		node = node.successor()
+	}
+	return node
+}
+
+func (t *TreeMap[K, V]) findLastNode(value V) *treeNode[K, V] {
+	node := t.getLastNode()
+	for node != nil {
+		if t.valEq(value, node.Value) {
+			break
+		}
+		node = node.predecessor()
+	}
+	return node
+}
+
+func (t *TreeMap[K, V]) removeNode(node *treeNode[K, V]) {
+	var child *treeNode[K, V]
+	if node.Left != nil && node.Right != nil {
+		prev := node.Left.maximumNode()
+		node.Key = prev.Key
+		node.Value = prev.Value
+		node = prev
+	}
+	if node.Left == nil || node.Right == nil {
+		if node.Right == nil {
+			child = node.Left
+		} else {
+			child = node.Right
+		}
+		if node.Black {
+			node.Black = isBlack(child)
+			t.removeFixup(node)
+		}
+		t.replace(node, child)
+		if node.Parent == nil && child != nil {
+			child.Black = true
+		}
+	}
+	t.size--
+}
+
+func (t *TreeMap[K, V]) nodeIterator() *nodeIterator[K, V] {
+	return t.nodeIteratorAt(t.root)
+}
+
+func (t *TreeMap[K, V]) descendingNodeIterator() *nodeIterator[K, V] {
+	return t.nodeIteratorAt(t.getLastNode())
+}
+
+func (t *TreeMap[K, V]) nodeIteratorAt(node *treeNode[K, V]) *nodeIterator[K, V] {
+	return &nodeIterator[K, V]{
+		treemap: t,
+		next:    node,
+		last:    nil,
+	}
+}
+
+func isBlack[K, V any](node *treeNode[K, V]) bool {
 	return node == nil || node.Black
 }

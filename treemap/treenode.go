@@ -1,16 +1,16 @@
 package treemap
 
-type TreeNode[K, V any] struct {
+type treeNode[K, V any] struct {
 	Key    K
 	Value  V
 	Black  bool
-	Parent *TreeNode[K, V]
-	Left   *TreeNode[K, V]
-	Right  *TreeNode[K, V]
+	Parent *treeNode[K, V]
+	Left   *treeNode[K, V]
+	Right  *treeNode[K, V]
 }
 
-func newNode[K, V any](key K, value V, black bool) *TreeNode[K, V] {
-	return &TreeNode[K, V]{
+func newNode[K, V any](key K, value V, black bool) *treeNode[K, V] {
+	return &treeNode[K, V]{
 		Key:    key,
 		Value:  value,
 		Black:  black,
@@ -20,21 +20,21 @@ func newNode[K, V any](key K, value V, black bool) *TreeNode[K, V] {
 	}
 }
 
-func (n *TreeNode[K, V]) grandparent() *TreeNode[K, V] {
+func (n *treeNode[K, V]) grandparent() *treeNode[K, V] {
 	if n == nil || n.Parent == nil {
 		return nil
 	}
 	return n.Parent.Parent
 }
 
-func (n *TreeNode[K, V]) uncle() *TreeNode[K, V] {
+func (n *treeNode[K, V]) uncle() *treeNode[K, V] {
 	if n == nil || n.Parent == nil || n.Parent.Parent == nil {
 		return nil
 	}
 	return n.Parent.sibling()
 }
 
-func (n *TreeNode[K, V]) sibling() *TreeNode[K, V] {
+func (n *treeNode[K, V]) sibling() *treeNode[K, V] {
 	if n == nil || n.Parent == nil {
 		return nil
 	}
@@ -44,7 +44,7 @@ func (n *TreeNode[K, V]) sibling() *TreeNode[K, V] {
 	return n.Parent.Left
 }
 
-func (n *TreeNode[K, V]) maximumNode() *TreeNode[K, V] {
+func (n *treeNode[K, V]) maximumNode() *treeNode[K, V] {
 	if n == nil {
 		return nil
 	}
@@ -54,7 +54,7 @@ func (n *TreeNode[K, V]) maximumNode() *TreeNode[K, V] {
 	return n
 }
 
-func (n *TreeNode[K, V]) predecessor() *TreeNode[K, V] {
+func (n *treeNode[K, V]) predecessor() *treeNode[K, V] {
 	if n == nil {
 		return nil
 	}
@@ -77,7 +77,7 @@ func (n *TreeNode[K, V]) predecessor() *TreeNode[K, V] {
 	return parent
 }
 
-func (n *TreeNode[K, V]) successor() *TreeNode[K, V] {
+func (n *treeNode[K, V]) successor() *treeNode[K, V] {
 	if n == nil {
 		return nil
 	}
