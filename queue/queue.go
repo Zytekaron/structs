@@ -24,20 +24,28 @@ func NewOrdered[V constraints.Ordered]() *Queue[V] {
 	}
 }
 
-func (q *Queue[V]) IsEmpty() bool {
-	return q.data.IsEmpty()
+func (q *Queue[V]) Add(value V) {
+	q.data.AddLast(value)
 }
 
-func (q *Queue[V]) Enqueue(value V) {
-	q.data.Push(value)
+func (q *Queue[V]) Element() V {
+	return q.Peek()
+}
+
+func (q *Queue[V]) Offer(value V) bool {
+	return q.data.Offer(value)
 }
 
 func (q *Queue[V]) Peek() V {
 	return q.data.Peek()
 }
 
-func (q *Queue[V]) Dequeue() V {
-	return q.data.Pop()
+func (q *Queue[V]) Poll() V {
+	return q.data.Poll()
+}
+
+func (q *Queue[V]) RemoveHead() V {
+	return q.data.RemoveHead()
 }
 
 func (q *Queue[V]) Contains(value V) bool {
@@ -50,6 +58,10 @@ func (q *Queue[V]) Iterator() structs.Iterator[V] {
 
 func (q *Queue[V]) DescendingIterator() structs.Iterator[V] {
 	return q.data.DescendingIterator()
+}
+
+func (q *Queue[V]) IsEmpty() bool {
+	return q.data.IsEmpty()
 }
 
 func (q *Queue[V]) Size() int {

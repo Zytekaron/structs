@@ -21,9 +21,11 @@ type EqualFunc[V any] func(a, b V) (equal bool)
 
 // CompareFunc is a function which returns an integer indicating
 // the difference between the first and second value.
-//  n == 0: a == b
-//  n < 0: a < b
-//  n > 0: a > b
+//
+//	n == 0: a == b
+//	n < 0: a < b
+//	n > 0: a > b
+//
 // CompareOrdered or ReverseCompareOrdered can be used
 // for any type which implements constraints.Ordered.
 type CompareFunc[V any] func(a, b V) (result int)
@@ -33,25 +35,46 @@ type CompareFunc[V any] func(a, b V) (result int)
 // greater than need, otherwise it may cause a panic from the caller.
 type CapacityFunc func(old, need int) int
 
+const (
+	// PanicUnsupportedOperation is thrown when a method is called on a type
+	// which does not support that method, for example, calling mutating methods
+	// on an immutable collection (slice/map wrap, read-only collection, etc.)
+	PanicUnsupportedOperation = "unsupported operation"
+	// PanicIllegalState is thrown when a method is called on a value with an
+	// invalid state for the operation, for example, calling Iterator.Remove()
+	// prior to calling Iterator.Next().
+	PanicIllegalState = "illegal state"
+	// PanicIndexOutOfBounds is thrown when a method is called with an index
+	// which is out of bounds for the particular operation, for example, -1, or
+	// an index greater than (or in some cases equal to) the collection's size.
+	PanicIndexOutOfBounds = "index out of bounds"
+	// PanicNoSuchElement is thrown when an element does not exist to perform
+	// an action, for example, calling Deque.RemoveFirst() on an empty deque.
+	PanicNoSuchElement = "no such element"
+)
+
 // LessOrdered is a LessFunc which compares two values of any type which
 // implements constraints.Ordered, returning their natural ordering.
-//  a < b
+//
+//	a < b
 func LessOrdered[V constraints.Ordered](a, b V) bool {
 	return a < b
 }
 
 // GreaterOrdered is a LessFunc which compares two values of any type which
 // implements constraints.Ordered, returning the inverse of their natural ordering.
-//  b < a
+//
+//	b < a
 func GreaterOrdered[V constraints.Ordered](a, b V) bool {
 	return b < a
 }
 
 // CompareOrdered is a CompareFunc which compares two values of any type
 // which implements constraints.Ordered, returning their natural ordering.
-//  a == b: 0
-//  a < b: -1
-//  a > b: +1
+//
+//	a == b: 0
+//	a < b: -1
+//	a > b: +1
 func CompareOrdered[V constraints.Ordered](a, b V) int {
 	if a < b {
 		return -1
@@ -64,9 +87,10 @@ func CompareOrdered[V constraints.Ordered](a, b V) int {
 
 // ReverseCompareOrdered is a CompareFunc which compares two values of any type
 // which implements constraints.Ordered, returning the inverse of their natural ordering.
-//  a == b: 0
-//  a < b: +1
-//  a > b: -1
+//
+//	a == b: 0
+//	a < b: +1
+//	a > b: -1
 func ReverseCompareOrdered[V constraints.Ordered](a, b V) int {
 	if a > b {
 		return -1

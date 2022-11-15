@@ -776,9 +776,8 @@ func (l *List[V]) insertBeforeNode(target *listNode[V], value V) *listNode[V] {
 //
 // Time Complexity: O(n)
 func (l *List[V]) getNodeAt(index int) *listNode[V] {
-	if index < 0 || index >= l.size {
-		panic("index out of range")
-	}
+	l.checkBounds(index, false)
+
 	node := l.head
 	for index > 0 {
 		node = node.Next
@@ -871,7 +870,7 @@ func (l *List[V]) removeNodeAt(index int) *listNode[V] {
 // errors in methods which rely on the head/tail being non-nil.
 func (l *List[V]) checkEmpty() {
 	if l.IsEmpty() {
-		panic("list is empty")
+		panic(structs.PanicNoSuchElement)
 	}
 }
 
@@ -881,6 +880,6 @@ func (l *List[V]) checkEmpty() {
 // for operations which may insert after the list's tail.
 func (l *List[V]) checkBounds(index int, allowEnd bool) {
 	if index < 0 || index > l.size || (!allowEnd && index == l.size) {
-		panic("index out of bounds")
+		panic(structs.PanicIndexOutOfBounds)
 	}
 }

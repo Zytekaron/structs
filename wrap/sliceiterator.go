@@ -1,5 +1,7 @@
 package wrap
 
+import "github.com/zytekaron/structs"
+
 type SliceWrapIterator[V any] struct {
 	data  []V
 	index int
@@ -26,5 +28,5 @@ func (s *SliceWrapIterator[V]) Next() V {
 }
 
 func (s *SliceWrapIterator[V]) Remove() {
-	panic("remove called on slice wrapping iterator")
+	panic(structs.PanicUnsupportedOperation)
 }

@@ -45,27 +45,27 @@ func OrderedValues[V constraints.Ordered](values ...V) *SliceWrap[V] {
 
 // Add panics when called.
 func (s *SliceWrap[V]) Add(V) bool {
-	panic("add called on immutable collection")
+	panic(structs.PanicUnsupportedOperation)
 }
 
 // AddAt panics when called.
 func (s *SliceWrap[V]) AddAt(int, V) {
-	panic("addat called on immutable collection")
+	panic(structs.PanicUnsupportedOperation)
 }
 
 // AddAll panics when called.
 func (s *SliceWrap[V]) AddAll(structs.Collection[V]) bool {
-	panic("addall called on immutable collection")
+	panic(structs.PanicUnsupportedOperation)
 }
 
 // AddIterator panics when called.
 func (s *SliceWrap[V]) AddIterator(structs.Iterator[V]) bool {
-	panic("addall called on immutable collection")
+	panic(structs.PanicUnsupportedOperation)
 }
 
 // Clear panics when called.
 func (s *SliceWrap[V]) Clear() {
-	panic("clear called on immutable collection")
+	panic(structs.PanicUnsupportedOperation)
 }
 
 // Contains returns whether the value is present the wrapped slice.
@@ -97,7 +97,7 @@ func (s *SliceWrap[V]) ContainsIterator(iter structs.Iterator[V]) bool {
 
 // Get returns the value at the specified index.
 func (s *SliceWrap[V]) Get(index int) V {
-	s.bounds(index)
+	s.checkBounds(index)
 
 	return s.data[index]
 }
@@ -138,27 +138,27 @@ func (s *SliceWrap[V]) Iterator() structs.Iterator[V] {
 
 // Remove panics when called.
 func (s *SliceWrap[V]) Remove(V) bool {
-	panic("remove called on immutable collection")
+	panic(structs.PanicUnsupportedOperation)
 }
 
 // RemoveAt panics when called.
 func (s *SliceWrap[V]) RemoveAt(int) V {
-	panic("removeat called on immutable collection")
+	panic(structs.PanicUnsupportedOperation)
 }
 
 // RemoveAll panics when called.
 func (s *SliceWrap[V]) RemoveAll(structs.Collection[V]) bool {
-	panic("removeall called on immutable collection")
+	panic(structs.PanicUnsupportedOperation)
 }
 
 // RemoveIterator panics when called.
 func (s *SliceWrap[V]) RemoveIterator(structs.Iterator[V]) bool {
-	panic("removeiterator called on immutable collection")
+	panic(structs.PanicUnsupportedOperation)
 }
 
 // RetainAll panics when callec.
 func (s *SliceWrap[V]) RetainAll(structs.Collection[V]) bool {
-	panic("retainall called on immutable collection")
+	panic(structs.PanicUnsupportedOperation)
 }
 
 // Size returns the size of the wrapped slice.
@@ -173,12 +173,12 @@ func (s *SliceWrap[V]) Cap() int {
 
 // Set panics when called.
 func (s *SliceWrap[V]) Set(int, V) V {
-	panic("set called on immutable collection")
+	panic(structs.PanicUnsupportedOperation)
 }
 
 // Sort panics when called.
 func (s *SliceWrap[V]) Sort(structs.LessFunc[V]) {
-	panic("sort called on immutable collection")
+	panic(structs.PanicUnsupportedOperation)
 }
 
 // Values returns a copy of the wrapped slice.
@@ -188,8 +188,8 @@ func (s *SliceWrap[V]) Values() []V {
 	return out
 }
 
-func (s *SliceWrap[V]) bounds(index int) {
+func (s *SliceWrap[V]) checkBounds(index int) {
 	if index < 0 || index >= s.Size() {
-		panic("index out of range")
+		panic(structs.PanicIndexOutOfBounds)
 	}
 }

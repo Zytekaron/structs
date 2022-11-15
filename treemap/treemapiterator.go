@@ -1,5 +1,7 @@
 package treemap
 
+import "github.com/zytekaron/structs"
+
 type nodeIterator[K, V any] struct {
 	treemap *TreeMap[K, V]
 	next    *treeNode[K, V]
@@ -13,7 +15,7 @@ func (it *nodeIterator[K, V]) hasNext() bool {
 func (it *nodeIterator[K, V]) nextNode() *treeNode[K, V] {
 	e := it.next
 	if e == nil {
-		panic("nextnode called on exhausted iterator")
+		panic(structs.PanicIllegalState)
 	}
 
 	it.next = e.successor()
@@ -24,7 +26,7 @@ func (it *nodeIterator[K, V]) nextNode() *treeNode[K, V] {
 func (it *nodeIterator[K, V]) previousNode() *treeNode[K, V] {
 	e := it.next
 	if e == nil {
-		panic("previousnode called on exhausted iterator")
+		panic(structs.PanicIllegalState)
 	}
 
 	it.next = e.predecessor()
@@ -34,7 +36,7 @@ func (it *nodeIterator[K, V]) previousNode() *treeNode[K, V] {
 
 func (it *nodeIterator[K, V]) remove() {
 	if it.last == nil {
-		panic("remove called on unused iterator")
+		panic(structs.PanicIllegalState)
 	}
 
 	if it.last.Left != nil && it.last.Right != nil {
@@ -74,7 +76,7 @@ func (it *DescendingKeyIterator[K, V]) Next() K {
 
 func (it *DescendingKeyIterator[K, V]) Remove() {
 	if it.iter.last == nil {
-		panic("remove called on unused iterator")
+		panic(structs.PanicIllegalState)
 	}
 
 	it.iter.treemap.removeNode(it.iter.last)
@@ -111,7 +113,7 @@ func (it *DescendingValueIterator[K, V]) Next() V {
 
 func (it *DescendingValueIterator[K, V]) Remove() {
 	if it.iter.last == nil {
-		panic("remove called on unused iterator")
+		panic(structs.PanicIllegalState)
 	}
 
 	it.iter.treemap.removeNode(it.iter.last)
@@ -150,7 +152,7 @@ func (it *DescendingEntryIterator[K, V]) Next() (K, V) {
 
 func (it *DescendingEntryIterator[K, V]) Remove() {
 	if it.iter.last == nil {
-		panic("remove called on unused iterator")
+		panic(structs.PanicIllegalState)
 	}
 
 	it.iter.treemap.removeNode(it.iter.last)

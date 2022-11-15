@@ -1,5 +1,7 @@
 package list
 
+import "github.com/zytekaron/structs"
+
 type Iterator[V any] struct {
 	list  *List[V]
 	prev  *listNode[V]
@@ -34,7 +36,7 @@ func (it *Iterator[V]) NextIndex() int {
 
 func (it *Iterator[V]) Previous() V {
 	if it.prev == nil {
-		panic("previous called on unused iterator")
+		panic(structs.PanicIllegalState)
 	}
 	it.index--
 
@@ -50,7 +52,7 @@ func (it *Iterator[V]) PreviousIndex() int {
 
 func (it *Iterator[V]) Remove() {
 	if it.prev == nil {
-		panic("remove called on unused iterator")
+		panic(structs.PanicIllegalState)
 	}
 	// if removing the previous value (by list order),
 	// decrease the index due to a left shift of data
@@ -68,7 +70,7 @@ func (it *Iterator[V]) Remove() {
 
 func (it *Iterator[V]) Set(value V) {
 	if it.last == nil {
-		panic("set called on invalid iterator state")
+		panic(structs.PanicIllegalState)
 	}
 	it.last.Value = value
 }
